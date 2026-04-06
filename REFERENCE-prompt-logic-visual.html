@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SesuaiFormat Engine - Prompt Logic Visual</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0a0a0f;
+    color: #e4e4e7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    padding: 40px 48px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .header p {
+    font-size: 14px;
+    color: #71717a;
+    margin-top: 6px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 16px 48px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #71717a;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab:hover { color: #a1a1aa; }
+  .tab.active { color: #f97316; border-bottom-color: #f97316; }
+
+  .content { padding: 32px 48px 64px; }
+
+  /* ===== VIEW 1: FLOW DIAGRAM ===== */
+  .flow-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1200px;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .flow-input-group {
+    flex: 0 0 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .flow-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    font-size: 12px;
+    transition: all 0.25s;
+    cursor: default;
+  }
+  .flow-input:hover {
+    border-color: rgba(249,115,22,0.4);
+    background: rgba(249,115,22,0.05);
+  }
+  .flow-input .type-badge {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .type-dropdown .type-badge { background: #1e1b4b; color: #818cf8; }
+  .type-text .type-badge { background: #172554; color: #60a5fa; }
+  .type-check .type-badge { background: #14532d; color: #4ade80; }
+  .type-radio .type-badge { background: #431407; color: #fb923c; }
+
+  .flow-arrow-zone {
+    flex: 0 0 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .flow-arrow-zone svg { overflow: visible; }
+
+  .flow-process {
+    flex: 0 0 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .process-box {
+    width: 100%;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(249,115,22,0.03));
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: #fdba74;
+  }
+  .process-box .process-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #f97316;
+    margin-bottom: 4px;
+  }
+
+  .flow-arrow-zone2 {
+    flex: 0 0 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .flow-output {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .output-box {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 3px solid #f97316;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #a1a1aa;
+  }
+  .output-box code {
+    background: rgba(249,115,22,0.1);
+    color: #fdba74;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .output-box .rule-num {
+    color: #52525b;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #52525b;
+    margin: 24px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  /* Simple arrow */
+  .arrow {
+    color: #3f3f46;
+    font-size: 20px;
+    letter-spacing: -2px;
+  }
+
+  /* ===== VIEW 2: TEMPLATE MAP ===== */
+  .template-view {
+    max-width: 1000px;
+    display: none;
+  }
+  .template-view.active, .flow-container.active { display: flex; }
+  .flow-container { display: none; }
+
+  .template-block {
+    margin-bottom: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .template-block-header {
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.03);
+    font-size: 12px;
+    font-weight: 600;
+    color: #d4d4d8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  .template-block-header:hover { background: rgba(255,255,255,0.05); }
+  .template-block-header .badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+  .badge-static { background: rgba(113,113,122,0.2); color: #a1a1aa; }
+  .badge-dynamic { background: rgba(249,115,22,0.15); color: #fb923c; }
+
+  .template-block-body {
+    padding: 16px;
+    font-size: 12px;
+    line-height: 2;
+    color: #a1a1aa;
+    white-space: pre-wrap;
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(0,0,0,0.3);
+    display: none;
+  }
+  .template-block.open .template-block-body { display: block; }
+
+  .var-slot {
+    display: inline;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: help;
+    position: relative;
+  }
+  .var-slot.form { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid rgba(249,115,22,0.25); }
+  .var-slot.computed { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.25); }
+  .var-slot.conditional { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+
+  /* ===== VIEW 3: CONDITIONALS ===== */
+  .cond-view {
+    max-width: 900px;
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .cond-view.active { display: flex; }
+
+  .cond-card {
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .cond-card-header {
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .cond-trigger {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e4e4e7;
+  }
+  .cond-var-name {
+    font-size: 10px;
+    padding: 3px 8px;
+    background: rgba(139,92,246,0.15);
+    color: #a78bfa;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+  .cond-branches {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cond-branch {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 12px;
+  }
+  .cond-if {
+    flex: 0 0 200px;
+    padding: 8px 12px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.15);
+    border-radius: 8px;
+    color: #4ade80;
+    font-family: monospace;
+    font-size: 11px;
+  }
+  .cond-then {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    color: #a1a1aa;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .cond-else .cond-if {
+    background: rgba(239,68,68,0.08);
+    border-color: rgba(239,68,68,0.15);
+    color: #f87171;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #71717a;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>SesuaiFormat Engine - Prompt Logic</h1>
+  <p>Reverse-engineered dari landingpage.sesuaiformat.id/generator</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('flow')">Flow Diagram</div>
+  <div class="tab" onclick="switchTab('template')">Template Map</div>
+  <div class="tab" onclick="switchTab('conditionals')">Conditional Logic</div>
+</div>
+
+<div class="content">
+
+  <!-- ===== VIEW 1: FLOW DIAGRAM ===== -->
+  <div class="flow-container active" id="flow">
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#818cf8"></div> Dropdown</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Text Input</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Checkbox</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fb923c"></div> Radio</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(249,115,22,0.3)"></div> Computed Variable</div>
+    </div>
+
+    <!-- ATURAN PENULISAN -->
+    <div class="section-title">Blok 1 - Aturan Penulisan & Layout (Rule 1-12)</div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-radio"><span class="type-badge">radio</span> Platform Target</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">conditional</div>
+          Lynk.id ? single col : multi col
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box"><span class="rule-num">RULE 1.</span> LAYOUT: <code>da</code> "Desain WAJIB menggunakan SATU KOLOM TUNGGAL..." atau "Desain bebas multi-kolom"</div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Warna Brand</div>
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Tema Background</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">concat</div>
+          Color string + !important override instruction
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box"><span class="rule-num">RULE 2.</span> TEMA VISUAL: <code>dn</code> Tema warna + instruksi CSS !important untuk override platform</div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Hero Section Type</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">conditional</div>
+          VSL ? video layout : standard image
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box"><span class="rule-num">RULE 3.</span> HERO TYPE: <code>hn</code> + <code>Hi</code> instruksi layout hero</div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-check"><span class="type-badge">check</span> Sticky Button Mobile</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">conditional</div>
+          checked ? "WAJIB sticky" : "Tidak perlu"
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box"><span class="rule-num">RULE 4.</span> STICKY CTA MOBILE: <code>Ns</code></div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Tipe Scarcity</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">direct inject</div>
+          Value dropdown langsung masuk
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box"><span class="rule-num">RULE 5.</span> SCARCITY LOGIC: <code>Bi</code> "Gunakan tipe kelangkaan ..."</div>
+      </div>
+    </div>
+
+    <div class="flow-row" style="opacity:0.5">
+      <div class="flow-input-group">
+        <div class="flow-input" style="border-style:dashed"><span style="color:#52525b;font-size:10px">STATIC</span> Rules 6-7</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process"><div class="process-box" style="border-style:dashed;opacity:0.6"><div class="process-label">none</div>Hardcoded text</div></div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box">Skimming-friendly + Anti Overclaim (selalu sama, tidak berubah)</div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Level Awareness</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process"><div class="process-box"><div class="process-label">direct inject</div>u.awareness</div></div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box"><span class="rule-num">RULE 8.</span> Penyesuaian Awareness: <code>u.awareness</code></div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Gaya Bahasa (Tone)</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process"><div class="process-box"><div class="process-label">direct inject</div>u.tone</div></div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box"><span class="rule-num">RULE 9.</span> Tone: <code>u.tone</code></div>
+      </div>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Aksi Tombol CTA</div>
+        <div class="flow-input type-text"><span class="type-badge">text</span> URL / No. WA (jika ada)</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">conditional</div>
+          scroll / URL external / link WA
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box"><span class="rule-num">RULE 12.</span> TARGET TOMBOL CTA: <code>Hn</code> instruksi href tombol</div>
+      </div>
+    </div>
+
+    <!-- PROFIL PRODUK -->
+    <div class="section-title">Blok 2 - Profil Produk & Market</div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-text"><span class="type-badge">text</span> Nama Produk</div>
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Tipe Produk</div>
+        <div class="flow-input type-text"><span class="type-badge">text</span> Deskripsi & Benefit</div>
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Target Audience</div>
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Tujuan Utama (Goal)</div>
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Pilih Framework</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">direct inject</div>
+          Semua langsung masuk ke slot masing-masing. Custom input override dropdown.
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box">
+          - Nama Produk: <code>u.product_name</code><br>
+          - Kategori: <code>J</code> (dropdown atau custom)<br>
+          - Deskripsi: <code>u.description</code><br>
+          - Target Market: <code>Ee</code> (dropdown atau custom)<br>
+          - Tujuan: <code>u.goal</code><br>
+          - Framework: <code>u.framework</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- PSIKOLOGI -->
+    <div class="section-title">Blok 3 - Psikologi Audiens</div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-text"><span class="type-badge">text</span> Pain Points</div>
+        <div class="flow-input type-text"><span class="type-badge">text</span> Keberatan Utama</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">fallback</div>
+          Kosong? Pakai default: "Tidak dispesifikan" / "Umum (Harga/Kualitas)"
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box">
+          - Pain Points: <code>ha</code> (juga masuk ke HERO hook)<br>
+          - Objection: <code>me</code> (juga masuk ke OBJECTION BLOCK)
+        </div>
+      </div>
+    </div>
+
+    <!-- PENAWARAN -->
+    <div class="section-title">Blok 4 - Penawaran (Offer Stack)</div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-text"><span class="type-badge">text</span> Harga Normal</div>
+        <div class="flow-input type-text"><span class="type-badge">text</span> Harga Promo</div>
+        <div class="flow-input type-check"><span class="type-badge">check</span> Ada Bonus?</div>
+        <div class="flow-input type-text"><span class="type-badge">text</span> Detail Bonus</div>
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> CTA Button</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">conditional</div>
+          Bonus: has_bonus ? detail : "Tidak ada"<br>
+          Promo: kosong ? "Tidak ada promo" : value<br>
+          CTA: custom ? custom text : dropdown
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box">
+          - Harga Normal: <code>u.price_normal</code><br>
+          - Harga Promo: <code>u.price_promo</code><br>
+          - Bonus: <code>Pr</code><br>
+          - CTA: <code>Ue</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRUKTUR HALAMAN -->
+    <div class="section-title">Blok 5 - Struktur Halaman</div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-check"><span class="type-badge">check</span> Social Proof</div>
+        <div class="flow-input type-check"><span class="type-badge">check</span> Testimonial</div>
+        <div class="flow-input type-check"><span class="type-badge">check</span> FAQ</div>
+        <div class="flow-input type-check"><span class="type-badge">check</span> Bonus / Guarantee / dll</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">join + conditional</div>
+          Checked items di-join(","). Kalau > 0, tambah blok "WAJIB buat section ini"
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box">
+          ADDITIONAL SECTIONS: <code>ra</code><br>
+          + extra block <code>vt</code> "HIGHLIGHT SECTION TAMBAHAN: AI WAJIB membuat..."
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="section-title">Blok 6 - Output Instruction</div>
+
+    <div class="flow-row">
+      <div class="flow-input-group">
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Gaya Desain</div>
+        <div class="flow-input type-dropdown"><span class="type-badge">select</span> Warna Brand</div>
+      </div>
+      <div class="flow-arrow-zone"><span class="arrow">---></span></div>
+      <div class="flow-process">
+        <div class="process-box">
+          <div class="process-label">direct inject</div>
+          Masuk ke final output instruction
+        </div>
+      </div>
+      <div class="flow-arrow-zone2"><span class="arrow">--></span></div>
+      <div class="flow-output">
+        <div class="output-box">
+          OUTPUT: HTML utuh + Tailwind CSS, visual <code>u.design_style</code> dengan warna <code>pt</code>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== VIEW 2: TEMPLATE MAP ===== -->
+  <div class="template-view" id="template">
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(249,115,22,0.4)"></div> Form Direct</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(139,92,246,0.4)"></div> Computed</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(34,197,94,0.4)"></div> Conditional</div>
+    </div>
+
+    <div class="template-block open">
+      <div class="template-block-header" onclick="this.parentElement.classList.toggle('open')">
+        PERSONA & TUGAS <span class="badge badge-static">Static</span>
+      </div>
+      <div class="template-block-body">ANDA ADALAH: Senior Conversion Copywriter + UI/UX minded marketer...
+
+TUGAS ANDA: Menulis Copywriting Landing Page (Sales Page)...</div>
+    </div>
+
+    <div class="template-block open">
+      <div class="template-block-header" onclick="this.parentElement.classList.toggle('open')">
+        ATURAN PENULISAN (12 Rules) <span class="badge badge-dynamic">12 Variables</span>
+      </div>
+      <div class="template-block-body">1. LAYOUT: <span class="var-slot conditional">da (platform-based)</span>
+2. TEMA VISUAL: <span class="var-slot computed">dn (color + CSS override)</span>
+3. HERO TYPE: <span class="var-slot form">hn (hero_type)</span> + <span class="var-slot conditional">Hi (layout instruction)</span>
+4. STICKY CTA: <span class="var-slot conditional">Ns (sticky_mobile ? YA : TIDAK)</span>
+5. SCARCITY: <span class="var-slot form">Bi (scarcity_type)</span>
+6. Skimming-friendly (static)
+7. Anti Overclaim (static)
+8. Awareness: <span class="var-slot form">u.awareness</span>
+9. Tone: <span class="var-slot form">u.tone</span>
+10. Gambar & Icon (static placeholder URL)
+11. Styling Tombol (static CSS rules)
+12. Target CTA: <span class="var-slot conditional">Hn (scroll/URL/WA)</span></div>
+    </div>
+
+    <div class="template-block open">
+      <div class="template-block-header" onclick="this.parentElement.classList.toggle('open')">
+        PROFIL PRODUK & MARKET <span class="badge badge-dynamic">6 Variables</span>
+      </div>
+      <div class="template-block-body">- Nama Produk: <span class="var-slot form">u.product_name</span>
+- Kategori: <span class="var-slot computed">J (category_base || custom)</span>
+- Deskripsi: <span class="var-slot form">u.description</span>
+- Target Market: <span class="var-slot computed">Ee (target_base || custom)</span>
+- Tujuan Utama: <span class="var-slot form">u.goal</span>
+- Framework: <span class="var-slot form">u.framework</span></div>
+    </div>
+
+    <div class="template-block open">
+      <div class="template-block-header" onclick="this.parentElement.classList.toggle('open')">
+        PSIKOLOGI AUDIENS <span class="badge badge-dynamic">2 Variables (reused 2x)</span>
+      </div>
+      <div class="template-block-body">- Pain Points: <span class="var-slot computed">ha (pain_points || fallback)</span>  --> juga masuk ke HERO SECTION
+- Objection: <span class="var-slot computed">me (objections || fallback)</span>  --> juga masuk ke OBJECTION BLOCK</div>
+    </div>
+
+    <div class="template-block open">
+      <div class="template-block-header" onclick="this.parentElement.classList.toggle('open')">
+        PENAWARAN (OFFER STACK) <span class="badge badge-dynamic">4 Variables</span>
+      </div>
+      <div class="template-block-body">- Harga Normal: <span class="var-slot form">u.price_normal</span>
+- Harga Promo: <span class="var-slot computed">u.price_promo || "Tidak ada promo"</span>
+- Bonus: <span class="var-slot conditional">Pr (has_bonus ? detail : "Tidak ada")</span>
+- CTA: "<span class="var-slot computed">Ue (cta_base || custom)</span>"</div>
+    </div>
+
+    <div class="template-block open">
+      <div class="template-block-header" onclick="this.parentElement.classList.toggle('open')">
+        STRUKTUR HALAMAN <span class="badge badge-dynamic">7 Variables</span>
+      </div>
+      <div class="template-block-body">PLATFORM: <span class="var-slot form">At (platform)</span>
+1. HERO: Hook relevan dengan <span class="var-slot computed">ha (pain_points)</span>
+2. BODY: Alur framework <span class="var-slot form">u.framework</span>
+3. OBJECTION BLOCK: Jawab "<span class="var-slot computed">me (objections)</span>"
+4. ADDITIONAL SECTIONS: <span class="var-slot computed">ra (joined checkboxes)</span>
+5. TRUST ELEMENTS (static)
+6. CONVERSION BLOCK: urgensi <span class="var-slot form">Bi (scarcity)</span>
+7. HIDDEN CTA (static)
+<span class="var-slot conditional">vt (extra block jika sections > 0)</span></div>
+    </div>
+
+    <div class="template-block open">
+      <div class="template-block-header" onclick="this.parentElement.classList.toggle('open')">
+        OUTPUT INSTRUCTION <span class="badge badge-dynamic">2 Variables</span>
+      </div>
+      <div class="template-block-body">HTML utuh (single file) + Tailwind CSS
+Visual: <span class="var-slot form">u.design_style</span>
+Warna: <span class="var-slot computed">pt (brand_color || custom hex)</span></div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW 3: CONDITIONALS ===== -->
+  <div class="cond-view" id="conditionals">
+
+    <div class="cond-card">
+      <div class="cond-card-header">
+        <span class="cond-trigger">Platform -> Layout</span>
+        <span class="cond-var-name">da</span>
+      </div>
+      <div class="cond-branches">
+        <div class="cond-branch">
+          <div class="cond-if">platform === "Lynk.id"</div>
+          <div class="cond-then">"Desain WAJIB menggunakan SATU KOLOM TUNGGAL (Single Column). Jangan gunakan grid multi-kolom."</div>
+        </div>
+        <div class="cond-branch cond-else">
+          <div class="cond-if">else (semua platform lain)</div>
+          <div class="cond-then">"Desain bebas multi-kolom" (Scalev, Berdu, WordPress, Shopify, dll.)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cond-card">
+      <div class="cond-card-header">
+        <span class="cond-trigger">Hero Type -> Layout Instruction</span>
+        <span class="cond-var-name">Hi</span>
+      </div>
+      <div class="cond-branches">
+        <div class="cond-branch">
+          <div class="cond-if">hero === "VSL"</div>
+          <div class="cond-then">"HERO SECTION: Gunakan layout VSL. Video embed (placeholder YT/Vimeo) harus menjadi fokus utama, dengan Headline besar di atasnya dan tombol CTA di bawahnya. JANGAN gunakan gambar samping."</div>
+        </div>
+        <div class="cond-branch">
+          <div class="cond-if">hero === "Typographic"</div>
+          <div class="cond-then">"HERO SECTION: Gunakan layout Typographic Only (Teks Besar)"</div>
+        </div>
+        <div class="cond-branch cond-else">
+          <div class="cond-if">else (Standard)</div>
+          <div class="cond-then">"HERO SECTION: Gunakan layout Hero standar (Gambar/Ilustrasi + Copy)."</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cond-card">
+      <div class="cond-card-header">
+        <span class="cond-trigger">Sticky Mobile Button</span>
+        <span class="cond-var-name">Ns</span>
+      </div>
+      <div class="cond-branches">
+        <div class="cond-branch">
+          <div class="cond-if">sticky_mobile === true</div>
+          <div class="cond-then">"WAJIB membuat tombol CTA Melayang (Sticky Bottom) yang hanya muncul di layar mobile agar mudah diakses saat scroll."</div>
+        </div>
+        <div class="cond-branch cond-else">
+          <div class="cond-if">sticky_mobile === false</div>
+          <div class="cond-then">"Tidak perlu sticky button."</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cond-card">
+      <div class="cond-card-header">
+        <span class="cond-trigger">CTA Target Type -> href Instruction</span>
+        <span class="cond-var-name">Hn</span>
+      </div>
+      <div class="cond-branches">
+        <div class="cond-branch">
+          <div class="cond-if">cta_target === "scroll"</div>
+          <div class="cond-then">"Arahkan href semua tombol CTA agar SCROLL ke form/section terbawah halaman (gunakan anchor tag)."</div>
+        </div>
+        <div class="cond-branch">
+          <div class="cond-if">cta_target === "url"</div>
+          <div class="cond-then">"Arahkan href SEMUA tombol CTA secara langsung ke URL: [user input]"</div>
+        </div>
+        <div class="cond-branch cond-else">
+          <div class="cond-if">cta_target === "wa"</div>
+          <div class="cond-then">"Arahkan href ke link WhatsApp: https://wa.me/[nomor]"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cond-card">
+      <div class="cond-card-header">
+        <span class="cond-trigger">Custom vs Dropdown (3 fields)</span>
+        <span class="cond-var-name">J, Ee, Ue</span>
+      </div>
+      <div class="cond-branches">
+        <div class="cond-branch">
+          <div class="cond-if">dropdown === "custom"</div>
+          <div class="cond-then">Pakai teks yang diketik user di input manual (category_custom, target_custom, cta_custom)</div>
+        </div>
+        <div class="cond-branch cond-else">
+          <div class="cond-if">else</div>
+          <div class="cond-then">Pakai value dari dropdown langsung (category_base, target_base, cta_base)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cond-card">
+      <div class="cond-card-header">
+        <span class="cond-trigger">Bonus Details</span>
+        <span class="cond-var-name">Pr</span>
+      </div>
+      <div class="cond-branches">
+        <div class="cond-branch">
+          <div class="cond-if">has_bonus === true && detail</div>
+          <div class="cond-then">Pakai teks bonus yang diisi user</div>
+        </div>
+        <div class="cond-branch">
+          <div class="cond-if">has_bonus === true && !detail</div>
+          <div class="cond-then">"Tidak ada detail."</div>
+        </div>
+        <div class="cond-branch cond-else">
+          <div class="cond-if">has_bonus === false</div>
+          <div class="cond-then">"Tidak ada bonus tambahan."</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cond-card">
+      <div class="cond-card-header">
+        <span class="cond-trigger">Additional Sections (checkboxes)</span>
+        <span class="cond-var-name">ra + vt</span>
+      </div>
+      <div class="cond-branches">
+        <div class="cond-branch">
+          <div class="cond-if">sections.length > 0</div>
+          <div class="cond-then"><strong>ra</strong> = checked items joined by ", " (e.g. "Social Proof, FAQ, Guarantee")<br><strong>vt</strong> = inject extra block: "PENTING: HIGHLIGHT SECTION TAMBAHAN - AI WAJIB membuat section: [list]"</div>
+        </div>
+        <div class="cond-branch cond-else">
+          <div class="cond-if">sections.length === 0</div>
+          <div class="cond-then"><strong>ra</strong> = "Standar"<br><strong>vt</strong> = "" (kosong, tidak ada tambahan)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cond-card">
+      <div class="cond-card-header">
+        <span class="cond-trigger">Fallback Values</span>
+        <span class="cond-var-name">ha, me</span>
+      </div>
+      <div class="cond-branches">
+        <div class="cond-branch">
+          <div class="cond-if">pain_points === ""</div>
+          <div class="cond-then"><strong>ha</strong> = "Tidak dispesifikan, harap riset mandiri."</div>
+        </div>
+        <div class="cond-branch">
+          <div class="cond-if">objections === ""</div>
+          <div class="cond-then"><strong>me</strong> = "Umum (Harga/Kualitas)."</div>
+        </div>
+        <div class="cond-branch cond-else">
+          <div class="cond-if">ada isi</div>
+          <div class="cond-then">Pakai teks yang diisi user langsung</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function switchTab(view) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.flow-container, .template-view, .cond-view').forEach(v => v.classList.remove('active'));
+
+  event.target.classList.add('active');
+  document.getElementById(view).classList.add('active');
+}
+</script>
+</body>
+</html>

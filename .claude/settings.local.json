@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l \"C:\\\\Users\\\\CANDRA DEWI\\\\Desktop\\\\.vscode\\\\Work Apps Project\\\\First Work Project\"/*.md)",
+      "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/app\")",
+      "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/lib/supabase\")",
+      "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/lib/config\")",
+      "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/lib/prompts\")",
+      "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/components/ui\")",
+      "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/components/auth\")",
+      "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/components/layout\")",
+      "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/app/login\")",
+      "Bash(npm install:*)"
+    ]
+  }
+}
