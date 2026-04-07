@@ -5,14 +5,22 @@ import { Section, UpdateSectionInput } from "@/lib/types";
 import { getLayoutById } from "@/lib/config/layouts";
 import FormatGalleryModal from "./FormatGalleryModal";
 import { cn } from "@/lib/utils";
+import { useBrandContext } from "@/contexts/BrandContext";
 
 interface SectionEditorProps {
   section: Section;
   onUpdate: (id: string, updates: UpdateSectionInput) => void;
+  validationErrors?: {
+    section_title?: string;
+    section_goals?: string;
+    layout_format?: string;
+    product_id?: string;
+  };
 }
 
-export default function SectionEditor({ section, onUpdate }: SectionEditorProps) {
+export default function SectionEditor({ section, onUpdate, validationErrors }: SectionEditorProps) {
   const [showFormatGallery, setShowFormatGallery] = useState(false);
+  const { products } = useBrandContext();
 
   const currentLayout = getLayoutById(section.layout_format);
 
@@ -43,8 +51,14 @@ export default function SectionEditor({ section, onUpdate }: SectionEditorProps)
           value={section.section_title}
           onChange={(e) => handleField("section_title", e.target.value)}
           placeholder="Contoh: Hero — Headline Utama"
-          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={cn(
+            "w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            validationErrors?.section_title ? "border-red-300" : "border-gray-300"
+          )}
         />
+        {validationErrors?.section_title && (
+          <p className="mt-1 text-xs text-red-500">{validationErrors.section_title}</p>
+        )}
       </div>
 
       {/* Section Goals */}
@@ -60,8 +74,37 @@ export default function SectionEditor({ section, onUpdate }: SectionEditorProps)
           onChange={(e) => handleField("section_goals", e.target.value)}
           placeholder="Contoh: Menarik perhatian visitor dengan headline yang kuat dan sub-headline yang memperjelas value proposition produk."
           rows={3}
-          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={cn(
+            "w-full px-3 py-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            validationErrors?.section_goals ? "border-red-300" : "border-gray-300"
+          )}
         />
+        {validationErrors?.section_goals && (
+          <p className="mt-1 text-xs text-red-500">{validationErrors.section_goals}</p>
+        )}
+      </div>
+
+      {/* Product */}
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">
+          Produk
+        </label>
+        <select
+          value={section.product_id ?? ""}
+          onChange={(e) => onUpdate(section.id, { product_id: e.target.value || null })}
+          className={cn(
+            "w-full px-3 py-2 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+            validationErrors?.product_id ? "border-red-300" : "border-gray-300"
+          )}
+        >
+          <option value="">-- Pilih Produk --</option>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>{product.name}</option>
+          ))}
+        </select>
+        {validationErrors?.product_id && (
+          <p className="mt-1 text-xs text-red-500">{validationErrors.product_id}</p>
+        )}
       </div>
 
       {/* Layout Format */}
@@ -72,7 +115,10 @@ export default function SectionEditor({ section, onUpdate }: SectionEditorProps)
         <button
           type="button"
           onClick={() => setShowFormatGallery(true)}
-          className="w-full flex items-center justify-between px-3 py-2 text-sm border border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left"
+          className={cn(
+            "w-full flex items-center justify-between px-3 py-2 text-sm border rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left",
+            validationErrors?.layout_format ? "border-red-300" : "border-gray-300"
+          )}
         >
           <div>
             <span className="font-medium text-gray-800">
@@ -91,6 +137,9 @@ export default function SectionEditor({ section, onUpdate }: SectionEditorProps)
           currentFormatId={section.layout_format}
           onSelect={handleFormatSelect}
         />
+        {validationErrors?.layout_format && (
+          <p className="mt-1 text-xs text-red-500">{validationErrors.layout_format}</p>
+        )}
       </div>
 
       {/* Style Mode */}

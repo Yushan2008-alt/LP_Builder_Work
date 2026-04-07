@@ -124,6 +124,7 @@ export function useProjects() {
 
     const duplicatedSectionsPayload = sourceSections.map((section, index) => ({
       project_id: duplicatedProject.id,
+      product_id: section.product_id ?? duplicatedProject.product_id,
       order_index: index,
       section_title: section.section_title,
       section_goals: section.section_goals,
@@ -175,6 +176,7 @@ export function useProjects() {
     if (formula.sections.length > 0) {
       const sectionsToInsert = formula.sections.map((s, i) => ({
         project_id: project.id,
+        product_id: productId,
         order_index: i,
         section_title: s.title,
         section_goals: s.goals,

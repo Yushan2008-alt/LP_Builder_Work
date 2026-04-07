@@ -291,11 +291,20 @@ export default function FormatGalleryModal({
   onSelect,
 }: FormatGalleryModalProps) {
   const [activeCategory, setActiveCategory] = useState<Category>("all");
+  const [search, setSearch] = useState("");
 
-  const filtered =
+  const categoryFiltered =
     activeCategory === "all"
       ? LAYOUT_FORMATS
       : LAYOUT_FORMATS.filter((f) => f.category === activeCategory);
+  const filtered = categoryFiltered.filter((format) => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return true;
+    return (
+      format.label.toLowerCase().includes(keyword) ||
+      format.description.toLowerCase().includes(keyword)
+    );
+  });
 
   function handleSelect(format: LayoutFormat) {
     onSelect(format.id);
@@ -320,6 +329,16 @@ export default function FormatGalleryModal({
             {cat.label}
           </button>
         ))}
+      </div>
+
+      <div className="mb-4">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari format..."
+          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
       </div>
 
       {/* Layout Grid */}

@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import DOMPurify from "dompurify";
+import { useRouter } from "next/navigation";
 import { copyToClipboard, downloadHtml, downloadText } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
+import { LP_EDITOR_HTML_STORAGE_KEY } from "@/lib/constants/editor";
 
 interface OutputPanelProps {
   output: string;
@@ -12,6 +14,7 @@ interface OutputPanelProps {
 }
 
 export default function OutputPanel({ output, outputMode, isGenerating }: OutputPanelProps) {
+  const router = useRouter();
   const [showPreview, setShowPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
@@ -38,6 +41,13 @@ export default function OutputPanel({ output, outputMode, isGenerating }: Output
       downloadText(output, "copywriting.txt");
     }
     showToast("File berhasil didownload", "success");
+  }
+
+  function handleOpenInEditor() {
+    if (!output || outputMode !== "html") return;
+    localStorage.setItem(LP_EDITOR_HTML_STORAGE_KEY, output);
+    showToast("Output HTML dikirim ke HTML Editor.", "success");
+    router.push("/editor");
   }
 
   const isEmpty = !output && !isGenerating;
@@ -85,6 +95,14 @@ export default function OutputPanel({ output, outputMode, isGenerating }: Output
             >
               Unduh
             </button>
+            {outputMode === "html" && (
+              <button
+                onClick={handleOpenInEditor}
+                className="text-xs px-2 py-1 rounded border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors"
+              >
+                Edit di HTML Editor
+              </button>
+            )}
           </div>
         )}
       </div>

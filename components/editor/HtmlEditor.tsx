@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import CodeMirror from "@uiw/react-codemirror";
+import { html as htmlLang } from "@codemirror/lang-html";
+import { oneDark } from "@codemirror/theme-one-dark";
 import DOMPurify from "dompurify";
 import { copyToClipboard, downloadHtml } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
-
-const STORAGE_KEY = "lp_editor_html";
+import { LP_EDITOR_HTML_STORAGE_KEY } from "@/lib/constants/editor";
 
 export default function HtmlEditor() {
   const { showToast } = useToast();
@@ -13,11 +15,10 @@ export default function HtmlEditor() {
   const [previewHtml, setPreviewHtml] = useState("");
   const [view, setView] = useState<"split" | "code" | "preview">("split");
   const [copied, setCopied] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(LP_EDITOR_HTML_STORAGE_KEY);
     if (saved) {
       setHtml(saved);
       setPreviewHtml(DOMPurify.sanitize(saved));
@@ -27,7 +28,7 @@ export default function HtmlEditor() {
   // Auto-save to localStorage on change
   useEffect(() => {
     const timer = setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, html);
+      localStorage.setItem(LP_EDITOR_HTML_STORAGE_KEY, html);
       setPreviewHtml(DOMPurify.sanitize(html));
     }, 500);
     return () => clearTimeout(timer);
@@ -54,12 +55,11 @@ export default function HtmlEditor() {
     if (window.confirm("Yakin ingin menghapus semua HTML? Perubahan ini tidak bisa dibatalkan.")) {
       setHtml("");
       setPreviewHtml("");
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(LP_EDITOR_HTML_STORAGE_KEY);
     }
   }
 
   function handlePaste() {
-    textareaRef.current?.focus();
     showToast("Paste HTML di sini (Ctrl+V / Cmd+V)", "info");
   }
 
@@ -153,33 +153,21 @@ export default function HtmlEditor() {
             <div className="flex-shrink-0 px-4 py-2 bg-gray-900 text-xs text-gray-400 font-mono">
               HTML
             </div>
-            {!html ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 bg-gray-950 text-gray-500">
-                <div className="text-4xl">📋</div>
-                <div className="text-center">
-                  <p className="text-sm font-medium">Paste HTML kamu di sini</p>
-                  <p className="text-xs mt-1 text-gray-600">
-                    Klik area di bawah lalu tekan Ctrl+V
-                  </p>
-                </div>
-                <textarea
-                  ref={textareaRef}
-                  value={html}
-                  onChange={(e) => setHtml(e.target.value)}
-                  placeholder="Paste HTML di sini..."
-                  className="w-full h-24 px-4 py-3 bg-gray-800 text-green-400 font-mono text-xs resize-none focus:outline-none border border-gray-700 rounded-lg mx-8"
-                />
-              </div>
-            ) : (
-              <textarea
-                ref={textareaRef}
+            <div className="flex-1 overflow-auto bg-gray-950">
+              <CodeMirror
                 value={html}
-                onChange={(e) => setHtml(e.target.value)}
-                className="flex-1 w-full resize-none p-4 text-xs font-mono text-green-400 bg-gray-950 focus:outline-none"
-                spellCheck={false}
-                wrap="off"
+                height="100%"
+                extensions={[htmlLang()]}
+                theme={oneDark}
+                basicSetup={{
+                  autocompletion: true,
+                  bracketMatching: true,
+                  closeBrackets: true,
+                  lineNumbers: true,
+                }}
+                onChange={(value) => setHtml(value)}
               />
-            )}
+            </div>
           </div>
         )}
 

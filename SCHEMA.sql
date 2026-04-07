@@ -166,6 +166,7 @@ CREATE INDEX idx_projects_product_id ON projects(product_id);
 CREATE TABLE sections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
 
   -- Positioning
   order_index INTEGER NOT NULL,
@@ -199,6 +200,7 @@ CREATE TABLE sections (
 
 CREATE INDEX idx_sections_project_id ON sections(project_id);
 CREATE INDEX idx_sections_project_id_order_index ON sections(project_id, order_index);
+CREATE INDEX idx_sections_product_id ON sections(product_id);
 
 -- ============================================================================
 -- TABLE: user_limits
@@ -437,6 +439,35 @@ CREATE TRIGGER trigger_check_project_limit
 BEFORE INSERT ON projects
 FOR EACH ROW
 EXECUTE FUNCTION check_project_limit();
+
+-- ============================================================================
+-- Trigger: Ensure section.product_id belongs to same user as parent project
+-- ============================================================================
+CREATE OR REPLACE FUNCTION enforce_section_product_ownership()
+RETURNS TRIGGER AS $$
+DECLARE
+  project_owner UUID;
+  product_owner UUID;
+BEGIN
+  IF NEW.product_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT user_id INTO project_owner FROM projects WHERE id = NEW.project_id;
+  SELECT user_id INTO product_owner FROM products WHERE id = NEW.product_id;
+
+  IF project_owner IS NULL OR product_owner IS NULL OR project_owner <> product_owner THEN
+    RAISE EXCEPTION 'Section product must belong to the same user as the project';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_enforce_section_product_ownership
+BEFORE INSERT OR UPDATE ON sections
+FOR EACH ROW
+EXECUTE FUNCTION enforce_section_product_ownership();
 
 -- ============================================================================
 -- AUTO-UPDATE TRIGGERS
