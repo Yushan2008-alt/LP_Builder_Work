@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ProductForm } from "./ProductForm";
 import type { Product, Brand } from "@/lib/types";
 import { formatDate, getFriendlyDatabaseError, getLimitReachedMessage } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   brand: Brand;
@@ -18,6 +19,7 @@ const FALLBACK_PRODUCT_REFERENCE_CHECK_ERROR = "Gagal memeriksa referensi proyek
 
 export function ProductList({ brand, products }: Props) {
   const { deleteProduct, products: allProducts, userLimits } = useBrandContext();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const supabase = createClient();
   const [editProduct, setEditProduct] = useState<Product | null>(null);
@@ -52,12 +54,17 @@ export function ProductList({ brand, products }: Props) {
   };
 
   const handleRequestDelete = async (product: Product) => {
+    if (!user) {
+      showToast("Sesi login tidak ditemukan. Silakan login ulang.", "error");
+      return;
+    }
     setIsCheckingDelete(true);
     try {
       const { count, error } = await supabase
         .from("projects")
         .select("*", { count: "exact", head: true })
-        .eq("product_id", product.id);
+        .eq("product_id", product.id)
+        .eq("user_id", user.id);
 
       if (error) throw new Error(getFriendlyDatabaseError(error.message));
 

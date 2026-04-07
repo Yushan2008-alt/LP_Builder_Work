@@ -19,6 +19,7 @@ interface SectionCardProps {
     section_goals?: string;
     layout_format?: string;
     product_id?: string;
+    style_custom?: string;
   };
 }
 

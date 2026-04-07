@@ -5,6 +5,13 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
+function mapAuthError(message: string) {
+  if (message === "Failed to fetch") {
+    return "Tidak bisa terhubung ke server autentikasi. Cek koneksi internet atau konfigurasi Supabase.";
+  }
+  return message;
+}
+
 function LoginForm() {
   const { signIn, signUp, user, isLoading } = useAuth();
   const router = useRouter();
@@ -38,17 +45,18 @@ function LoginForm() {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
-    if (!email || !password) { setError("Email dan password wajib diisi."); return; }
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) { setError("Email dan password wajib diisi."); return; }
     if (password.length < 6) { setError("Password minimal 6 karakter."); return; }
     setIsSubmitting(true);
     try {
       if (mode === "login") {
-        const { error } = await signIn(email, password);
-        if (error) { setError(error); return; }
+        const { error } = await signIn(normalizedEmail, password);
+        if (error) { setError(mapAuthError(error)); return; }
         router.replace(redirectAfterAuth);
       } else {
-        const { error } = await signUp(email, password);
-        if (error) { setError(error); return; }
+        const { error } = await signUp(normalizedEmail, password);
+        if (error) { setError(mapAuthError(error)); return; }
         setSuccessMsg("Akun berhasil dibuat! Cek email kamu untuk konfirmasi, lalu login.");
         setMode("login");
       }

@@ -195,6 +195,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
   const saveProject = useCallback(async (): Promise<boolean> => {
     if (!project) return false;
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
     setIsSaving(true);
     try {
       const updatableProject = {
@@ -211,7 +214,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       const { error: projectError } = await supabase
         .from("projects")
         .update({ ...updatableProject, is_dirty: false })
-        .eq("id", project.id);
+        .eq("id", project.id)
+        .eq("user_id", user.id);
       if (projectError) throw new Error(getFriendlyDatabaseError(projectError.message));
 
       const initialSections = initialSectionsRef.current;
@@ -318,7 +322,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsSaving(false);
     }
-  }, [project, sections, supabase]);
+  }, [project, sections, supabase, user]);
 
   return (
     <ProjectContext.Provider

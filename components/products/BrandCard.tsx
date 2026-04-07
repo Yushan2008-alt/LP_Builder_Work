@@ -127,7 +127,11 @@ export function BrandCard({ brand }: Props) {
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
         title="Hapus Brand"
-        message={`Brand "${brand.name}" dan semua produk di dalamnya (${brandProducts.length} produk) akan dihapus permanen.`}
+        message={
+          brandProducts.length > 0
+            ? `Brand ini punya ${brandProducts.length} produk. Hapus brand akan menghapus semua produk.`
+            : `Brand "${brand.name}" akan dihapus permanen.`
+        }
         isLoading={isDeleting}
       />
     </div>

@@ -21,6 +21,7 @@ export function ProductDashboard() {
   const [isCreating, setIsCreating] = useState(false);
   const [newBrand, setNewBrand] = useState<Brand | null>(null);
   const [showGuidelinesForNew, setShowGuidelinesForNew] = useState(false);
+  const [brandNameError, setBrandNameError] = useState<string | undefined>(undefined);
 
   const maxBrands = userLimits?.max_brands ?? 3;
   const maxProducts = userLimits?.max_products ?? 10;
@@ -30,13 +31,16 @@ export function ProductDashboard() {
     e.preventDefault();
     const trimmedName = newBrandName.trim();
     if (!trimmedName) {
-      showToast("Nama brand wajib diisi.", "error");
+      setBrandNameError("Field ini wajib diisi");
+      showToast("Lengkapi field wajib sebelum menyimpan.", "warning");
       return;
     }
     if (trimmedName.length > MAX_BRAND_NAME_LENGTH) {
+      setBrandNameError(`Nama brand maksimal ${MAX_BRAND_NAME_LENGTH} karakter.`);
       showToast(`Nama brand maksimal ${MAX_BRAND_NAME_LENGTH} karakter.`, "error");
       return;
     }
+    setBrandNameError(undefined);
     if (!canAddBrand) {
       showToast(getLimitReachedMessage(maxBrands, "brand"), "error");
       return;
@@ -164,7 +168,7 @@ export function ProductDashboard() {
       {/* Add Brand Modal */}
       <Modal
         isOpen={showAddBrand}
-        onClose={() => { setShowAddBrand(false); setNewBrandName(""); }}
+        onClose={() => { setShowAddBrand(false); setNewBrandName(""); setBrandNameError(undefined); }}
         title="Tambah Brand Baru"
         size="sm"
       >
@@ -172,8 +176,12 @@ export function ProductDashboard() {
           <Input
             label="Nama Brand"
             value={newBrandName}
-            onChange={(e) => setNewBrandName(e.target.value)}
+            onChange={(e) => {
+              setNewBrandName(e.target.value);
+              if (brandNameError) setBrandNameError(undefined);
+            }}
             placeholder="e.g. Kelas.co, Toko Keren, PT Maju Jaya"
+            error={brandNameError}
             required
             autoFocus
           />
@@ -181,7 +189,7 @@ export function ProductDashboard() {
             Setelah brand dibuat, kamu bisa atur font, warna, dan vibe-nya di Brand Guidelines.
           </p>
           <div className="flex gap-3 justify-end">
-            <Button type="button" variant="ghost" onClick={() => { setShowAddBrand(false); setNewBrandName(""); }}>
+            <Button type="button" variant="ghost" onClick={() => { setShowAddBrand(false); setNewBrandName(""); setBrandNameError(undefined); }}>
               Batal
             </Button>
             <Button type="submit" isLoading={isCreating}>

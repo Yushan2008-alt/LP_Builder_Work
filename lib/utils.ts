@@ -22,7 +22,13 @@ export function generateProjectName(formulaName: string, productName: string): s
 }
 
 export function getLimitReachedMessage(limit: number, resourceLabel: "brand" | "produk" | "project"): string {
-  return `Kamu sudah mencapai batas ${limit} ${resourceLabel}.`;
+  if (resourceLabel === "brand") {
+    return `Kamu sudah mencapai batas ${limit} brand. Upgrade untuk menambah.`;
+  }
+  if (resourceLabel === "produk") {
+    return `Kamu sudah mencapai batas ${limit} produk.`;
+  }
+  return `Kamu sudah mencapai batas ${limit} project.`;
 }
 
 export function isLimitExceededError(message: string): boolean {
