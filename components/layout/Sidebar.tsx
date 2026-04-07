@@ -35,7 +35,9 @@ export function Sidebar() {
   const router = useRouter();
   const { projects, fetchProjects } = useProjects();
 
-  useEffect(() => { fetchProjects(); }, []);
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const handleSignOut = async () => {
     await signOut();

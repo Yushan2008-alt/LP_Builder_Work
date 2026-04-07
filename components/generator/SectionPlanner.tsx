@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -30,6 +30,7 @@ interface SectionPlannerProps {
 
 export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const {
     project, sections, isDirty, isLoading, isSaving, generatedOutput,
@@ -50,7 +51,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   // Load project on mount
   useEffect(() => {
     loadProject(projectId);
-  }, [projectId]);
+  }, [projectId, loadProject]);
 
   // Warn before leaving with unsaved changes
   useEffect(() => {
@@ -60,14 +61,62 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
         e.returnValue = "";
       }
     };
+
+    const confirmLeave = () =>
+      window.confirm("Kamu punya perubahan yang belum disimpan. Yakin mau keluar?");
+
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (!isDirty) return;
+      if (e.defaultPrevented) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const target = e.target as Element | null;
+      const link = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!link) return;
+      if (link.target === "_blank" || link.hasAttribute("download")) return;
+
+      const nextUrl = new URL(link.href, window.location.href);
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      const nextPath = `${nextUrl.pathname}${nextUrl.search}`;
+      if (currentPath === nextPath) return;
+
+      if (!confirmLeave()) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    const handlePopState = () => {
+      if (!isDirty) return;
+      if (!confirmLeave()) {
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("click", handleDocumentClick, true);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleDocumentClick, true);
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [isDirty]);
 
   // Sync output mode from project
   useEffect(() => {
     if (project) setOutputMode(project.output_mode);
-  }, [project?.output_mode]);
+  }, [project]);
+
+  // Deep-link output mode override: /generator/:projectId?mode=html|copy
+  useEffect(() => {
+    if (!project) return;
+    const mode = searchParams.get("mode");
+    if (mode !== "html" && mode !== "copy") return;
+    if (project.output_mode === mode) return;
+    setOutputMode(mode);
+    setProject({ ...project, output_mode: mode });
+  }, [project, searchParams, setProject]);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;

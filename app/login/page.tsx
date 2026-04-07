@@ -17,7 +17,7 @@ function LoginForm() {
 
   useEffect(() => {
     if (!isLoading && user) router.replace("/products");
-  }, [user, isLoading]);
+  }, [user, isLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

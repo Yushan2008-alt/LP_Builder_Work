@@ -8,6 +8,7 @@ interface Props {
   formula: Formula;
   onClick: () => void;
   isLoading?: boolean;
+  isPreselected?: boolean;
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -26,7 +27,7 @@ const TIER_ACCENT: Record<string, string> = {
   custom: "text-gray-600",
 };
 
-export function FormulaCard({ formula, onClick, isLoading }: Props) {
+export function FormulaCard({ formula, onClick, isLoading, isPreselected }: Props) {
   const isCustom = formula.id === "custom";
 
   return (
@@ -36,6 +37,7 @@ export function FormulaCard({ formula, onClick, isLoading }: Props) {
       className={cn(
         "w-full text-left p-5 rounded-2xl border bg-gradient-to-br transition-all duration-150",
         "hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
+        isPreselected && "ring-2 ring-blue-500 ring-offset-2",
         TIER_COLORS[formula.tier] ?? "from-gray-50 to-gray-50 border-gray-200 hover:border-gray-300"
       )}
     >
