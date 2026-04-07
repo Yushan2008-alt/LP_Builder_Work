@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { useBrandContext } from "@/contexts/BrandContext";
+import { createClient } from "@/lib/supabase/client";
 import { ProductForm } from "./ProductForm";
 import type { Product, Brand } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -16,22 +17,46 @@ interface Props {
 export function ProductList({ brand, products }: Props) {
   const { deleteProduct } = useBrandContext();
   const { showToast } = useToast();
+  const supabase = createClient();
   const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; referenceCount: number } | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [isCheckingDelete, setIsCheckingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (!deleteId) return;
+    if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      await deleteProduct(deleteId);
+      await deleteProduct(deleteTarget.id);
       showToast("Produk dihapus.", "success");
     } catch {
       showToast("Gagal menghapus produk.", "error");
     } finally {
       setIsDeleting(false);
-      setDeleteId(null);
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleRequestDelete = async (product: Product) => {
+    setIsCheckingDelete(true);
+    try {
+      const { count, error } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("product_id", product.id);
+
+      if (error) throw new Error(error.message);
+
+      setDeleteTarget({
+        id: product.id,
+        name: product.name,
+        referenceCount: count ?? 0,
+      });
+    } catch {
+      showToast("Gagal memeriksa referensi proyek produk ini.", "error");
+    } finally {
+      setIsCheckingDelete(false);
     }
   };
 
@@ -77,7 +102,8 @@ export function ProductList({ brand, products }: Props) {
                   Edit
                 </button>
                 <button
-                  onClick={() => setDeleteId(product.id)}
+                  onClick={() => handleRequestDelete(product)}
+                  disabled={isCheckingDelete || isDeleting}
                   className="px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   Hapus
@@ -110,11 +136,17 @@ export function ProductList({ brand, products }: Props) {
         }}
       />
       <ConfirmDialog
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         title="Hapus Produk"
-        message="Produk ini akan dihapus permanen. Project yang menggunakan produk ini mungkin terpengaruh. Yakin?"
+        message={
+          deleteTarget
+            ? deleteTarget.referenceCount > 0
+              ? `Produk "${deleteTarget.name}" digunakan di ${deleteTarget.referenceCount} project. Yakin hapus?`
+              : `Produk "${deleteTarget.name}" akan dihapus permanen. Yakin hapus?`
+            : ""
+        }
         isLoading={isDeleting}
       />
     </div>
