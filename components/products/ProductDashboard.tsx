@@ -10,7 +10,7 @@ import { BrandGuidelinesModal } from "./BrandGuidelinesModal";
 import type { Brand } from "@/lib/types";
 import { getLimitReachedMessage, isLimitExceededError } from "@/lib/utils";
 
-const MAX_BRAND_NAME_DB_LIMIT = 100;
+const MAX_BRAND_NAME_LENGTH = 100;
 
 export function ProductDashboard() {
   const { brands, products, userLimits, createBrand, isLoading } = useBrandContext();
@@ -33,8 +33,8 @@ export function ProductDashboard() {
       showToast("Nama brand wajib diisi.", "error");
       return;
     }
-    if (trimmedName.length > MAX_BRAND_NAME_DB_LIMIT) {
-      showToast(`Nama brand maksimal ${MAX_BRAND_NAME_DB_LIMIT} karakter.`, "error");
+    if (trimmedName.length > MAX_BRAND_NAME_LENGTH) {
+      showToast(`Nama brand maksimal ${MAX_BRAND_NAME_LENGTH} karakter.`, "error");
       return;
     }
     setIsCreating(true);
