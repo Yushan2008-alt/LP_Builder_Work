@@ -65,7 +65,9 @@ export function ProductList({ brand, products }: Props) {
         referenceCount: count ?? 0,
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Gagal memeriksa referensi proyek produk ini.";
+      const msg = err instanceof Error
+        ? getFriendlyDatabaseError(err.message)
+        : "Gagal memeriksa referensi proyek produk ini.";
       showToast(msg, "error");
     } finally {
       setIsCheckingDelete(false);

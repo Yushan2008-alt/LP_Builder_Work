@@ -37,7 +37,7 @@ export function isSupabaseMissingTableError(message: string): boolean {
   const normalized = message.toLowerCase();
   return (
     (normalized.includes("could not find the table") && normalized.includes("schema cache"))
-    || normalized.includes("relation \"public.")
+    || normalized.includes('relation "public.')
     || normalized.includes("relation does not exist")
   );
 }
