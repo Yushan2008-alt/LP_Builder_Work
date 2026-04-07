@@ -30,7 +30,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       return `tmp-${crypto.randomUUID()}`;
     }
     tempIdCounterRef.current += 1;
-    return `tmp-${Date.now()}-${tempIdCounterRef.current}-${Math.random().toString(36).slice(2, 10)}`;
+    return `tmp-${tempIdCounterRef.current}-${Math.random().toString(36).slice(2, 14)}`;
   };
 
   const isTempId = (id: string) => id.startsWith("tmp-");
