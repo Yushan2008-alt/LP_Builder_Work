@@ -69,7 +69,7 @@ export function useProjects() {
     if (!user) return null;
     const sourceProject = projects.find((p) => p.id === sourceProjectId);
     if (!sourceProject) {
-      throw new Error("Project sumber tidak ditemukan.");
+      throw new Error("Source project tidak ditemukan.");
     }
 
     const usedNames = new Set(projects.map((project) => project.name.trim().toLowerCase()));
