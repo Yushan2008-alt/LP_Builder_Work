@@ -26,16 +26,25 @@ export function ProductDashboard() {
 
   const handleCreateBrand = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newBrandName.trim()) return;
+    const trimmedName = newBrandName.trim();
+    if (!trimmedName) {
+      showToast("Nama brand wajib diisi.", "error");
+      return;
+    }
+    if (trimmedName.length > 100) {
+      showToast("Nama brand maksimal 100 karakter.", "error");
+      return;
+    }
     setIsCreating(true);
     try {
-      const brand = await createBrand({ name: newBrandName.trim() });
+      const brand = await createBrand({ name: trimmedName });
+      if (!brand) {
+        throw new Error("Brand gagal dibuat. Coba lagi.");
+      }
       setNewBrandName("");
       setShowAddBrand(false);
-      if (brand) {
-        setNewBrand(brand);
-        setShowGuidelinesForNew(true);
-      }
+      setNewBrand(brand);
+      setShowGuidelinesForNew(true);
       showToast("Brand berhasil dibuat!", "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal membuat brand";

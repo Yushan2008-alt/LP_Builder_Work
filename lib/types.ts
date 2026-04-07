@@ -105,7 +105,7 @@ export type CreateProductInput = {
   usp?: string | null;
 };
 
-export type UpdateProductInput = Partial<Omit<CreateProductInput, "brand_id">>;
+export type UpdateProductInput = Partial<CreateProductInput>;
 
 export type CreateProjectInput = {
   product_id: string;

@@ -16,6 +16,7 @@ interface Props {
 }
 
 const EMPTY_PRODUCT_FORM = {
+  brand_id: "",
   name: "",
   description: "",
   price_normal: "",
@@ -27,7 +28,7 @@ const EMPTY_PRODUCT_FORM = {
 };
 
 export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
-  const { createProduct, updateProduct, userLimits } = useBrandContext();
+  const { createProduct, updateProduct, userLimits, brands } = useBrandContext();
   const { showToast } = useToast();
   const isEditing = !!product;
   const [isLoading, setIsLoading] = useState(false);
@@ -38,6 +39,7 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
   useEffect(() => {
     if (product) {
       setForm({
+        brand_id: product.brand_id,
         name: product.name,
         description: product.description,
         price_normal: product.price_normal,
@@ -48,16 +50,20 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
         usp: product.usp ?? "",
       });
     } else {
-      setForm(EMPTY_PRODUCT_FORM);
+      setForm({ ...EMPTY_PRODUCT_FORM, brand_id: brandId });
     }
-  }, [product, isOpen]);
+  }, [product, isOpen, brandId]);
 
   const set = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.brand_id.trim()) {
+      showToast("Brand wajib dipilih.", "error");
+      return;
+    }
     if (!form.name.trim() || !form.description.trim() || !form.price_normal.trim()) {
-      showToast("Nama, deskripsi, dan harga normal wajib diisi.", "error");
+      showToast("Brand, nama, deskripsi, dan harga normal wajib diisi.", "error");
       return;
     }
     setIsLoading(true);
@@ -65,6 +71,7 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
       const nullify = (v: string) => v.trim() || null;
       if (isEditing && product) {
         const input: UpdateProductInput = {
+          brand_id: form.brand_id,
           name: form.name, description: form.description,
           price_normal: form.price_normal, price_promo: nullify(form.price_promo),
           target_audience: nullify(form.target_audience), pain_points: nullify(form.pain_points),
@@ -74,7 +81,7 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
         showToast("Produk diperbarui!", "success");
       } else {
         const input: CreateProductInput = {
-          brand_id: brandId, name: form.name, description: form.description,
+          brand_id: form.brand_id, name: form.name, description: form.description,
           price_normal: form.price_normal, price_promo: nullify(form.price_promo),
           target_audience: nullify(form.target_audience), pain_points: nullify(form.pain_points),
           objections: nullify(form.objections), usp: nullify(form.usp),
@@ -99,6 +106,26 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
     <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? "Edit Produk" : "Tambah Produk Baru"} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <label htmlFor="product-brand" className="text-sm font-medium text-gray-700">
+              Brand
+              <span className="text-red-500 ml-1">*</span>
+            </label>
+            <select
+              id="product-brand"
+              value={form.brand_id}
+              onChange={(e) => set("brand_id", e.target.value)}
+              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="" disabled>Pilih brand</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="col-span-2">
             <Input label="Nama Produk" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Kelas Online Marketing Digital" required />
           </div>
