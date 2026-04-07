@@ -69,7 +69,7 @@ export function useProjects() {
     if (!user) return null;
     const sourceProject = projects.find((p) => p.id === sourceProjectId);
     if (!sourceProject) {
-      throw new Error("Source project tidak ditemukan.");
+      throw new Error("Source project not found.");
     }
 
     const usedNames = new Set(projects.map((project) => project.name.trim().toLowerCase()));
@@ -110,10 +110,10 @@ export function useProjects() {
 
     if (sourceSectionsError) {
       const { error: rollbackError } = await supabase.from("projects").delete().eq("id", duplicatedProject.id);
-      setProjects((prev) => prev.filter((project) => project.id !== duplicatedProject.id));
       if (rollbackError) {
         throw new Error(`${sourceSectionsError.message} (rollback failed: ${rollbackError.message})`);
       }
+      setProjects((prev) => prev.filter((project) => project.id !== duplicatedProject.id));
       throw new Error(sourceSectionsError.message);
     }
 
