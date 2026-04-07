@@ -198,6 +198,9 @@ PROMPTS.md ───────────────────────
 | File | Copy ke | Notes |
 |---|---|---|
 | SCHEMA.sql | Supabase SQL Editor | Run sekali, bikin semua tables + triggers |
+| supabase/setup/01-verify-core-schema.sql | Supabase SQL Editor | Verifikasi tabel inti + enum sudah terbentuk |
+| supabase/setup/02-backfill-user-limits.sql | Supabase SQL Editor | Backfill `user_limits` untuk user lama (aman dijalankan ulang) |
+| supabase/setup/03-healthcheck-rls-and-triggers.sql | Supabase SQL Editor | Cek RLS, policy, dan trigger schema |
 | FORMULAS.ts | src/config/formulas.ts | Langsung jadi TypeScript module, no edits needed |
 | PROMPTS.md > Layout Instructions | src/config/layouts.ts | Perlu convert dari markdown ke TS object |
 | PROMPTS.md > Preset Maps | src/config/brand-presets.ts | FONT_PRESET_MAP + VIBE_PRESET_MAP |
