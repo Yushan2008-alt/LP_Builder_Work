@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
@@ -43,6 +43,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [outputMode, setOutputMode] = useState<"html" | "copy">("html");
   const projectOutputMode = project?.output_mode;
+  const isHandlingPopStateRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -89,8 +90,13 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     };
 
     const handlePopState = () => {
+      if (isHandlingPopStateRef.current) {
+        isHandlingPopStateRef.current = false;
+        return;
+      }
       if (!isDirty) return;
       if (!confirmLeave()) {
+        isHandlingPopStateRef.current = true;
         window.history.pushState(null, "", currentPath);
       }
     };
@@ -115,10 +121,8 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     if (!project) return;
     const mode = searchParams.get("mode");
     if (mode !== "html" && mode !== "copy") return;
-    if (project.output_mode === mode) return;
     setOutputMode(mode);
-    setProject({ ...project, output_mode: mode });
-  }, [project, searchParams, setProject]);
+  }, [project, searchParams]);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -192,7 +196,8 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     }
     setIsGenerating(true);
     try {
-      const prompt = assemblePrompt({ project, product, brand, sections });
+      const projectForGeneration = { ...project, output_mode: outputMode };
+      const prompt = assemblePrompt({ project: projectForGeneration, product, brand, sections });
       setGeneratedOutput(prompt);
       showToast("Prompt berhasil dibuat! Copy dan paste ke Claude/ChatGPT.", "success");
     } catch {
