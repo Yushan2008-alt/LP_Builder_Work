@@ -99,8 +99,11 @@ export function useProjects() {
       }));
       const { error } = await supabase.from("sections").insert(sectionsToInsert);
       if (error) {
-        await supabase.from("projects").delete().eq("id", project.id);
+        const { error: rollbackError } = await supabase.from("projects").delete().eq("id", project.id);
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        if (rollbackError) {
+          throw new Error(`${error.message} (rollback failed: ${rollbackError.message})`);
+        }
         throw new Error(error.message);
       }
     }

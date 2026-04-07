@@ -30,8 +30,15 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
-    if (error) return;
-    if (data) setUserLimits(data as UserLimits);
+    if (error) {
+      setUserLimits(null);
+      return;
+    }
+    if (data) {
+      setUserLimits(data as UserLimits);
+      return;
+    }
+    setUserLimits(null);
   }, [user, supabase]);
 
   const fetchBrands = useCallback(async () => {
