@@ -180,6 +180,10 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
 
   function handleGenerate() {
     if (!project) return;
+    if (!canGeneratePrompt) {
+      if (generateDisabledReason) showToast(generateDisabledReason, "warning");
+      return;
+    }
     const product = products.find((p) => p.id === project.product_id);
     if (!product) {
       showToast("Produk tidak ditemukan", "error");
@@ -224,6 +228,16 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   }
 
   const currentProduct = project ? products.find((p) => p.id === project.product_id) : null;
+  const generateDisabledReason = isGenerating
+    ? "Sedang memproses prompt"
+    : !project?.product_id || !currentProduct
+      ? "Pilih produk terlebih dahulu"
+      : sections.length === 0
+        ? "Tambah minimal 1 section"
+        : !canGenerate(project, sections, project.product_id)
+          ? "Lengkapi judul dan goals semua section"
+          : "";
+  const canGeneratePrompt = generateDisabledReason === "";
 
   if (isLoading) {
     return (
@@ -263,7 +277,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
               )}
               {isDirty && (
                 <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded font-medium flex-shrink-0">
-                  Unsaved
+                  Belum disimpan
                 </span>
               )}
             </div>
@@ -341,14 +355,15 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
             </button>
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || sections.length === 0}
+              disabled={!canGeneratePrompt}
+              title={generateDisabledReason || "Generate prompt"}
               className={`px-4 py-1.5 text-xs rounded-lg font-semibold transition-colors ${
-                !isGenerating && sections.length > 0
+                canGeneratePrompt
                   ? "bg-blue-600 text-white hover:bg-blue-700"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
             >
-              {isGenerating ? "Generating..." : "⚡ Generate Prompt"}
+              {isGenerating ? "Memproses..." : "⚡ Generate Prompt"}
             </button>
           </div>
         </div>
@@ -363,6 +378,12 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
               Seksi ({sections.length})
             </h2>
           </div>
+
+          {sections.length > 15 && (
+            <div className="mx-4 mt-3 mb-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              Lebih dari 15 section bisa menghasilkan prompt yang terlalu panjang.
+            </div>
+          )}
 
           <div className="flex-1 p-4 space-y-2 overflow-y-auto">
             <DndContext

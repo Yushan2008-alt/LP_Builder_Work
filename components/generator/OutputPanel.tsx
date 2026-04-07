@@ -72,13 +72,13 @@ export default function OutputPanel({ output, outputMode, isGenerating }: Output
                   : "border-gray-300 text-gray-600 hover:bg-gray-100"
               }`}
             >
-              {copied ? "✓ Copied!" : "Copy"}
+              {copied ? "✓ Tersalin!" : "Salin"}
             </button>
             <button
               onClick={handleDownload}
               className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors"
             >
-              Download
+              Unduh
             </button>
           </div>
         )}

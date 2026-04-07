@@ -30,15 +30,36 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loadProject = useCallback(async (projectId: string) => {
-    if (!user) return;
+    if (!user) {
+      setProjectState(null);
+      setSectionsState([]);
+      setIsDirty(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      const [{ data: projectData }, { data: sectionsData }] = await Promise.all([
-        supabase.from("projects").select("*").eq("id", projectId).eq("user_id", user.id).single(),
-        supabase.from("sections").select("*").eq("project_id", projectId).order("order_index", { ascending: true }),
-      ]);
-      if (projectData) setProjectState(projectData as Project);
-      if (sectionsData) setSectionsState(sectionsData as Section[]);
+      const { data: projectData } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!projectData) {
+        setProjectState(null);
+        setSectionsState([]);
+        setIsDirty(false);
+        return;
+      }
+
+      const { data: sectionsData } = await supabase
+        .from("sections")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("order_index", { ascending: true });
+
+      setProjectState(projectData as Project);
+      setSectionsState((sectionsData as Section[]) ?? []);
       setIsDirty(false);
     } finally {
       setIsLoading(false);
