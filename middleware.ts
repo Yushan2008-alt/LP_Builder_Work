@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+function sanitizeRedirectPath(path: string | null): string | null {
+  if (!path) return null;
+  if (!path.startsWith("/") || path.startsWith("//")) return null;
+  return path;
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -46,12 +52,19 @@ export async function middleware(request: NextRequest) {
   if (!user && isProtectedRoute) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("redirectedFrom", request.nextUrl.pathname);
+    const requestedPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    redirectUrl.searchParams.set("redirectedFrom", requestedPath);
     return NextResponse.redirect(redirectUrl);
   }
 
   if (user && request.nextUrl.pathname === "/login") {
-    return NextResponse.redirect(new URL("/products", request.url));
+    const nextParam = request.nextUrl.searchParams.get("next");
+    const redirectedFromParam = request.nextUrl.searchParams.get("redirectedFrom");
+    const targetPath =
+      sanitizeRedirectPath(nextParam) ??
+      sanitizeRedirectPath(redirectedFromParam) ??
+      "/products";
+    return NextResponse.redirect(new URL(targetPath, request.url));
   }
 
   return supabaseResponse;

@@ -391,9 +391,12 @@ export function canGenerate(project: Project | null, sections: Section[], produc
   if (!project) return false;
   if (!productId) return false;
   if (sections.length === 0) return false;
-  // Check all sections have title and goals
+  // Check all sections have title, goals, and selected layout format
   const allSectionsValid = sections.every(
-    (s) => s.section_title.trim().length > 0 && s.section_goals.trim().length > 0
+    (s) =>
+      s.section_title.trim().length > 0 &&
+      s.section_goals.trim().length > 0 &&
+      s.layout_format.trim().length > 0
   );
   return allSectionsValid;
 }

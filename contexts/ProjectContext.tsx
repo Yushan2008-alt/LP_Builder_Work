@@ -7,6 +7,7 @@ import type {
   CreateSectionInput, UpdateSectionInput
 } from "@/lib/types";
 import { useAuth } from "./AuthContext";
+import { useRef } from "react";
 
 const ProjectContext = createContext<ProjectContextValue | undefined>(undefined);
 
@@ -20,6 +21,17 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [generatedOutput, setGeneratedOutput] = useState("");
+  const initialProjectRef = useRef<Project | null>(null);
+  const initialSectionsRef = useRef<Section[]>([]);
+
+  const makeTempId = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return `tmp-${crypto.randomUUID()}`;
+    }
+    return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  };
+
+  const isTempId = (id: string) => id.startsWith("tmp-");
 
   const setProject = useCallback((p: Project) => {
     setProjectState((prev) => {
@@ -66,6 +78,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         setProjectState(null);
         setSectionsState([]);
         setIsDirty(false);
+        initialProjectRef.current = null;
+        initialSectionsRef.current = [];
         return;
       }
 
@@ -75,9 +89,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         .eq("project_id", projectId)
         .order("order_index", { ascending: true });
 
-      setProjectState(projectData as Project);
-      setSectionsState((sectionsData as Section[]) ?? []);
+      const nextProject = projectData as Project;
+      const nextSections = (sectionsData as Section[]) ?? [];
+      setProjectState(nextProject);
+      setSectionsState(nextSections);
       setIsDirty(false);
+      initialProjectRef.current = nextProject;
+      initialSectionsRef.current = nextSections.map((section) => ({ ...section }));
     } finally {
       setIsLoading(false);
     }
@@ -85,86 +103,71 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
   const addSection = useCallback(async (input: Omit<CreateSectionInput, "project_id">): Promise<Section | null> => {
     if (!project) return null;
-    const { data, error } = await supabase
-      .from("sections")
-      .insert({ ...input, project_id: project.id })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    const section = data as Section;
-    setSectionsState((prev) => [...prev, section].sort((a, b) => a.order_index - b.order_index));
+    const section: Section = {
+      id: makeTempId(),
+      project_id: project.id,
+      order_index: input.order_index,
+      section_title: input.section_title,
+      section_goals: input.section_goals,
+      layout_format: input.layout_format,
+      style_mode: input.style_mode ?? "default",
+      style_custom: input.style_custom ?? null,
+      framework_position: input.framework_position ?? null,
+      additional_context: input.additional_context ?? null,
+      created_at: new Date().toISOString(),
+    };
+    setSectionsState((prev) =>
+      [...prev, section]
+        .sort((a, b) => a.order_index - b.order_index)
+        .map((item, index) => ({ ...item, order_index: index }))
+    );
     setIsDirty(true);
+    setProjectState((prev) => (prev ? { ...prev, is_dirty: true } : prev));
     return section;
-  }, [project, supabase]);
+  }, [project]);
 
   const updateSection = useCallback(async (id: string, input: UpdateSectionInput): Promise<void> => {
-    const { data, error } = await supabase
-      .from("sections")
-      .update(input)
-      .eq("id", id)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    const updated = data as Section;
-    setSectionsState((prev) => prev.map((s) => (s.id === id ? updated : s)));
+    setSectionsState((prev) =>
+      prev.map((s) => {
+        if (s.id !== id) return s;
+        return {
+          ...s,
+          ...input,
+          style_custom: input.style_custom !== undefined ? input.style_custom : s.style_custom,
+          framework_position:
+            input.framework_position !== undefined ? input.framework_position : s.framework_position,
+          additional_context:
+            input.additional_context !== undefined ? input.additional_context : s.additional_context,
+        };
+      })
+    );
     setIsDirty(true);
-  }, [supabase]);
+    setProjectState((prev) => (prev ? { ...prev, is_dirty: true } : prev));
+  }, []);
 
   const deleteSection = useCallback(async (id: string): Promise<void> => {
-    const previousSections = sections.map((section) => ({ ...section }));
-    const nextSections = previousSections
+    const nextSections = sections
       .filter((s) => s.id !== id)
       .map((s, i) => ({ ...s, order_index: i }));
-
     setSectionsState(nextSections);
     setIsDirty(true);
-
-    try {
-      const { error: deleteError } = await supabase.from("sections").delete().eq("id", id);
-      if (deleteError) throw new Error(deleteError.message);
-
-      const reorderUpdates = nextSections.map((s) =>
-        supabase.from("sections").update({ order_index: s.order_index }).eq("id", s.id)
-      );
-      const reorderResults = await Promise.all(reorderUpdates);
-      const failed = reorderResults.find((result) => result.error);
-      if (failed?.error) throw new Error(failed.error.message);
-    } catch (error) {
-      setSectionsState(previousSections);
-      throw error;
-    }
-  }, [sections, supabase]);
+    setProjectState((prev) => (prev ? { ...prev, is_dirty: true } : prev));
+  }, [sections]);
 
   const duplicateSection = useCallback(async (id: string): Promise<void> => {
     const original = sections.find((s) => s.id === id);
     if (!original || !project) return;
     const newOrderIndex = original.order_index + 1;
-    // Shift all sections after this one
-    const sectionsToShift = sections.filter((s) => s.order_index >= newOrderIndex);
-    if (sectionsToShift.length > 0) {
-      await Promise.all(
-        sectionsToShift.map((s) =>
-          supabase.from("sections").update({ order_index: s.order_index + 1 }).eq("id", s.id)
-        )
-      );
-    }
-    const { data, error } = await supabase
-      .from("sections")
-      .insert({
-        project_id: project.id,
-        order_index: newOrderIndex,
-        section_title: original.section_title + " (Copy)",
-        section_goals: original.section_goals,
-        layout_format: original.layout_format,
-        style_mode: original.style_mode,
-        style_custom: original.style_custom,
-        framework_position: original.framework_position,
-        additional_context: original.additional_context,
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    const newSection = data as Section;
+
+    const newSection: Section = {
+      ...original,
+      id: makeTempId(),
+      project_id: project.id,
+      order_index: newOrderIndex,
+      section_title: `${original.section_title} (Copy)`,
+      created_at: new Date().toISOString(),
+    };
+
     setSectionsState((prev) => {
       const shifted = prev.map((s) =>
         s.order_index >= newOrderIndex ? { ...s, order_index: s.order_index + 1 } : s
@@ -172,27 +175,15 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       return [...shifted, newSection].sort((a, b) => a.order_index - b.order_index);
     });
     setIsDirty(true);
-  }, [sections, project, supabase]);
+    setProjectState((prev) => (prev ? { ...prev, is_dirty: true } : prev));
+  }, [sections, project]);
 
   const reorderSections = useCallback(async (newSections: Section[]): Promise<void> => {
-    const previousSections = sections.map((section) => ({ ...section }));
     const reindexed = newSections.map((s, i) => ({ ...s, order_index: i }));
-
     setSectionsState(reindexed);
     setIsDirty(true);
-
-    try {
-      const updates = reindexed.map((s) =>
-        supabase.from("sections").update({ order_index: s.order_index }).eq("id", s.id)
-      );
-      const results = await Promise.all(updates);
-      const failed = results.find((result) => result.error);
-      if (failed?.error) throw new Error(failed.error.message);
-    } catch (error) {
-      setSectionsState(previousSections);
-      throw error;
-    }
-  }, [sections, supabase]);
+    setProjectState((prev) => (prev ? { ...prev, is_dirty: true } : prev));
+  }, []);
 
   const saveProject = useCallback(async (): Promise<boolean> => {
     if (!project) return false;
@@ -209,18 +200,112 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         global_settings: project.global_settings,
       };
 
-      const { error } = await supabase
+      const { error: projectError } = await supabase
         .from("projects")
-        .update({ ...updatableProject, is_dirty: false, updated_at: new Date().toISOString() })
+        .update({ ...updatableProject, is_dirty: false })
         .eq("id", project.id);
-      if (error) throw new Error(error.message);
-      setProjectState((prev) => prev ? { ...prev, is_dirty: false } : null);
+      if (projectError) throw new Error(projectError.message);
+
+      const initialSections = initialSectionsRef.current;
+      const currentSections = sections.map((section, index) => ({
+        ...section,
+        order_index: index,
+      }));
+
+      const currentIdSet = new Set(currentSections.map((section) => section.id));
+      const deletedSectionIds = initialSections
+        .filter((section) => !currentIdSet.has(section.id))
+        .map((section) => section.id)
+        .filter((id) => !isTempId(id));
+
+      if (deletedSectionIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from("sections")
+          .delete()
+          .in("id", deletedSectionIds);
+        if (deleteError) throw new Error(deleteError.message);
+      }
+
+      const sectionsToInsert = currentSections.filter((section) => isTempId(section.id));
+      if (sectionsToInsert.length > 0) {
+        const payload = sectionsToInsert.map((section) => ({
+          project_id: project.id,
+          order_index: section.order_index,
+          section_title: section.section_title,
+          section_goals: section.section_goals,
+          layout_format: section.layout_format,
+          style_mode: section.style_mode,
+          style_custom: section.style_custom,
+          framework_position: section.framework_position,
+          additional_context: section.additional_context,
+        }));
+        const { error: insertError } = await supabase.from("sections").insert(payload);
+        if (insertError) throw new Error(insertError.message);
+      }
+
+      const initialMap = new Map(initialSections.map((section) => [section.id, section]));
+      const sectionUpdatePromises = currentSections
+        .filter((section) => !isTempId(section.id))
+        .map(async (section) => {
+          const initial = initialMap.get(section.id);
+          if (!initial) {
+            return;
+          }
+
+          const hasChanged =
+            initial.order_index !== section.order_index ||
+            initial.section_title !== section.section_title ||
+            initial.section_goals !== section.section_goals ||
+            initial.layout_format !== section.layout_format ||
+            initial.style_mode !== section.style_mode ||
+            initial.style_custom !== section.style_custom ||
+            initial.framework_position !== section.framework_position ||
+            initial.additional_context !== section.additional_context;
+
+          if (!hasChanged) {
+            return;
+          }
+
+          const { error: updateError } = await supabase
+            .from("sections")
+            .update({
+              order_index: section.order_index,
+              section_title: section.section_title,
+              section_goals: section.section_goals,
+              layout_format: section.layout_format,
+              style_mode: section.style_mode,
+              style_custom: section.style_custom,
+              framework_position: section.framework_position,
+              additional_context: section.additional_context,
+            })
+            .eq("id", section.id);
+
+          if (updateError) {
+            throw new Error(updateError.message);
+          }
+        });
+
+      await Promise.all(sectionUpdatePromises);
+
+      const { data: latestSections, error: latestSectionsError } = await supabase
+        .from("sections")
+        .select("*")
+        .eq("project_id", project.id)
+        .order("order_index", { ascending: true });
+      if (latestSectionsError) throw new Error(latestSectionsError.message);
+
+      const updatedProject = { ...project, is_dirty: false };
+      const updatedSections = (latestSections as Section[]) ?? [];
+      setProjectState(updatedProject);
+      setSectionsState(updatedSections);
       setIsDirty(false);
+      initialProjectRef.current = updatedProject;
+      initialSectionsRef.current = updatedSections.map((section) => ({ ...section }));
       return true;
     } finally {
       setIsSaving(false);
     }
-  }, [project, supabase]);
+  }, [project, sections, supabase]);
 
   return (
     <ProjectContext.Provider
