@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LAYOUT_FORMATS, LayoutFormat } from "@/lib/config/layouts";
-import Modal from "@/components/ui/Modal";
+import { Modal } from "@/components/ui/Modal";
 import { cn } from "@/lib/utils";
 
 interface FormatGalleryModalProps {
