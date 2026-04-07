@@ -13,7 +13,7 @@ export function FormulaGallery() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { products, userLimits } = useBrandContext();
-  const { createProjectFromFormula, projects } = useProjects();
+  const { createProjectFromFormula, projects, fetchProjects, isLoading: isProjectsLoading } = useProjects();
   const { showToast } = useToast();
 
   const [search, setSearch] = useState("");
@@ -24,6 +24,10 @@ export function FormulaGallery() {
 
   const maxProjects = userLimits?.max_projects ?? 4;
   const canCreate = projects.length < maxProjects;
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const filtered = useMemo(() => {
     return FORMULAS.filter((f) => {
@@ -48,6 +52,10 @@ export function FormulaGallery() {
   }, [searchParams]);
 
   const handleSelect = async (formulaId: string) => {
+    if (isProjectsLoading) {
+      showToast("Sedang memuat daftar project. Coba lagi sebentar.", "warning");
+      return;
+    }
     if (!canCreate) {
       showToast(`Batas maksimum ${maxProjects} project telah tercapai. Hapus project lama dulu.`, "error");
       return;

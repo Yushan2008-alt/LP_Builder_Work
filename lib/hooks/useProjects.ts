@@ -11,15 +11,25 @@ export function useProjects() {
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchProjects = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setProjects([]);
+      return;
+    }
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
-    if (!error && data) setProjects(data as Project[]);
-    setIsLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+      if (error) {
+        setProjects([]);
+        return;
+      }
+      setProjects((data as Project[]) ?? []);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user, supabase]);
 
   const createProject = useCallback(async (input: CreateProjectInput): Promise<Project | null> => {
@@ -88,7 +98,11 @@ export function useProjects() {
         framework_position: s.frameworkPosition,
       }));
       const { error } = await supabase.from("sections").insert(sectionsToInsert);
-      if (error) throw new Error(error.message);
+      if (error) {
+        await supabase.from("projects").delete().eq("id", project.id);
+        setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        throw new Error(error.message);
+      }
     }
 
     return project.id;

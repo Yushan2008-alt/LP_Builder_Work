@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type {
   Brand, Product, UserLimits,
@@ -14,43 +14,64 @@ const BrandContext = createContext<BrandContextValue | undefined>(undefined);
 
 export function BrandProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [userLimits, setUserLimits] = useState<UserLimits | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchUserLimits = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
+    if (!user) {
+      setUserLimits(null);
+      return;
+    }
+    const { data, error } = await supabase
       .from("user_limits")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
+    if (error) return;
     if (data) setUserLimits(data as UserLimits);
-  }, [user]);
+  }, [user, supabase]);
 
   const fetchBrands = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setBrands([]);
+      return;
+    }
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from("brands")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true });
-    if (!error && data) setBrands(data as Brand[]);
-    setIsLoading(false);
-  }, [user]);
+    try {
+      const { data, error } = await supabase
+        .from("brands")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+      if (error) {
+        setBrands([]);
+        return;
+      }
+      setBrands((data as Brand[]) ?? []);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, supabase]);
 
   const fetchProducts = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setProducts([]);
+      return;
+    }
     const { data, error } = await supabase
       .from("products")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
-    if (!error && data) setProducts(data as Product[]);
-  }, [user]);
+    if (error) {
+      setProducts([]);
+      return;
+    }
+    setProducts((data as Product[]) ?? []);
+  }, [user, supabase]);
 
   useEffect(() => {
     if (user) {
@@ -62,7 +83,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       setProducts([]);
       setUserLimits(null);
     }
-  }, [user]);
+  }, [user, fetchBrands, fetchProducts, fetchUserLimits]);
 
   const createBrand = useCallback(async (input: CreateBrandInput): Promise<Brand | null> => {
     if (!user) return null;
@@ -76,7 +97,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     setBrands((prev) => [...prev, brand]);
     await fetchUserLimits();
     return brand;
-  }, [user, fetchUserLimits]);
+  }, [user, fetchUserLimits, supabase]);
 
   const updateBrand = useCallback(async (id: string, input: UpdateBrandInput): Promise<Brand | null> => {
     const { data, error } = await supabase
@@ -89,7 +110,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     const brand = data as Brand;
     setBrands((prev) => prev.map((b) => (b.id === id ? brand : b)));
     return brand;
-  }, []);
+  }, [supabase]);
 
   const deleteBrand = useCallback(async (id: string): Promise<boolean> => {
     const { error } = await supabase.from("brands").delete().eq("id", id);
@@ -98,7 +119,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => prev.filter((p) => p.brand_id !== id));
     await fetchUserLimits();
     return true;
-  }, [fetchUserLimits]);
+  }, [fetchUserLimits, supabase]);
 
   const createProduct = useCallback(async (input: CreateProductInput): Promise<Product | null> => {
     if (!user) return null;
@@ -112,7 +133,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => [...prev, product]);
     await fetchUserLimits();
     return product;
-  }, [user, fetchUserLimits]);
+  }, [user, fetchUserLimits, supabase]);
 
   const updateProduct = useCallback(async (id: string, input: UpdateProductInput): Promise<Product | null> => {
     const { data, error } = await supabase
@@ -125,7 +146,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     const product = data as Product;
     setProducts((prev) => prev.map((p) => (p.id === id ? product : p)));
     return product;
-  }, []);
+  }, [supabase]);
 
   const deleteProduct = useCallback(async (id: string): Promise<boolean> => {
     const { error } = await supabase.from("products").delete().eq("id", id);
@@ -133,7 +154,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     setProducts((prev) => prev.filter((p) => p.id !== id));
     await fetchUserLimits();
     return true;
-  }, [fetchUserLimits]);
+  }, [fetchUserLimits, supabase]);
 
   return (
     <BrandContext.Provider

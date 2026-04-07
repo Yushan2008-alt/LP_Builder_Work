@@ -13,7 +13,7 @@ export default function SavedProjectsList() {
   const router = useRouter();
   const { showToast } = useToast();
   const { projects, isLoading, fetchProjects, deleteProject } = useProjects();
-  const { products } = useBrandContext();
+  const { products, userLimits } = useBrandContext();
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -42,6 +42,7 @@ export default function SavedProjectsList() {
     formula: "bg-purple-100 text-purple-700",
     custom: "bg-gray-100 text-gray-600",
   };
+  const maxProjects = userLimits?.max_projects ?? 4;
 
   if (isLoading) {
     return (
@@ -57,7 +58,7 @@ export default function SavedProjectsList() {
         <div>
           <h1 className="text-xl font-bold text-gray-900">Saved Projects</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {projects.length} dari 4 project
+            {projects.length} dari {maxProjects} project
           </p>
         </div>
         <button
