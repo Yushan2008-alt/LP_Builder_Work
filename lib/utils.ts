@@ -35,7 +35,7 @@ export function isLimitExceededError(message: string): boolean {
 
 type DatabaseErrorLike = string | { message?: string | null; code?: string | null };
 
-const APP_DATABASE_TABLES = ["brands", "products", "projects", "sections", "user_limits"];
+const APP_DATABASE_TABLES = new Set(["brands", "products", "projects", "sections", "user_limits"]);
 const MISSING_TABLE_ERROR_CODES = new Set(["42P01", "PGRST205"]);
 
 function extractDatabaseErrorMessage(error: DatabaseErrorLike): string {
@@ -43,9 +43,8 @@ function extractDatabaseErrorMessage(error: DatabaseErrorLike): string {
   return error.message ?? "";
 }
 
-function isAppDatabaseTableMentioned(message: string): boolean {
-  const normalized = message.toLowerCase();
-  return APP_DATABASE_TABLES.some((table) => normalized.includes(table));
+function isAppDatabaseTable(tableName: string): boolean {
+  return APP_DATABASE_TABLES.has(tableName.toLowerCase());
 }
 
 export function isSupabaseMissingTableError(error: DatabaseErrorLike): boolean {
@@ -54,16 +53,17 @@ export function isSupabaseMissingTableError(error: DatabaseErrorLike): boolean {
   }
 
   const message = extractDatabaseErrorMessage(error);
-  const normalized = message.toLowerCase();
-  const hasSchemaCacheTableError = normalized.includes("could not find the table")
-    && normalized.includes("schema cache")
-    && isAppDatabaseTableMentioned(message);
-  const hasMissingRelationError = /relation\s+"(?:public\.)?([a-z_]+)"\s+does not exist/i
-    .test(message);
+  const schemaCacheMatch = message.match(/could not find the table ['"](?:public\.)?([a-z_]+)['"]/i);
+  if (schemaCacheMatch?.[1] && isAppDatabaseTable(schemaCacheMatch[1])) {
+    return true;
+  }
 
-  if (hasSchemaCacheTableError) return true;
-  if (!hasMissingRelationError) return false;
-  return isAppDatabaseTableMentioned(message);
+  const missingRelationMatch = message.match(/relation\s+"(?:public\.)?([a-z_]+)"\s+does not exist/i);
+  if (missingRelationMatch?.[1] && isAppDatabaseTable(missingRelationMatch[1])) {
+    return true;
+  }
+
+  return false;
 }
 
 const DATABASE_NOT_READY_MESSAGE = "Database belum siap (tabel belum dibuat). Jalankan SCHEMA.sql di Supabase SQL Editor lalu coba lagi.";
