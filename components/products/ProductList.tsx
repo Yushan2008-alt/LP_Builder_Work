@@ -14,7 +14,7 @@ interface Props {
   products: Product[];
 }
 
-const CHECK_PRODUCT_REFERENCE_ERROR_MESSAGE = "Gagal memeriksa referensi proyek produk ini.";
+const FALLBACK_PRODUCT_REFERENCE_CHECK_ERROR = "Gagal memeriksa referensi proyek produk ini.";
 
 export function ProductList({ brand, products }: Props) {
   const { deleteProduct, products: allProducts, userLimits } = useBrandContext();
@@ -69,7 +69,7 @@ export function ProductList({ brand, products }: Props) {
     } catch (err: unknown) {
       const msg = err instanceof Error
         ? getFriendlyDatabaseError(err.message)
-        : CHECK_PRODUCT_REFERENCE_ERROR_MESSAGE;
+        : FALLBACK_PRODUCT_REFERENCE_CHECK_ERROR;
       showToast(msg, "error");
     } finally {
       setIsCheckingDelete(false);

@@ -35,7 +35,7 @@ export function isLimitExceededError(message: string): boolean {
 
 export function isSupabaseMissingTableError(message: string): boolean {
   const normalized = message.toLowerCase();
-  const hasRelationPublicError = /relation\s+"public\./i.test(message);
+  const hasRelationPublicError = normalized.includes('relation "public.');
   return (
     (normalized.includes("could not find the table") && normalized.includes("schema cache"))
     || hasRelationPublicError
