@@ -27,6 +27,7 @@ const EMPTY_PRODUCT_FORM = {
   usp: "",
 };
 
+type ProductFormState = typeof EMPTY_PRODUCT_FORM;
 type ProductFieldErrors = Partial<Record<"brand_id" | "name" | "description" | "price_normal", string>>;
 
 export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
@@ -37,7 +38,7 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
   const maxProducts = userLimits?.max_products ?? 10;
   const [fieldErrors, setFieldErrors] = useState<ProductFieldErrors>({});
 
-  const [form, setForm] = useState(EMPTY_PRODUCT_FORM);
+  const [form, setForm] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
 
   useEffect(() => {
     if (product) {
@@ -58,12 +59,20 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
     setFieldErrors({});
   }, [product, isOpen, brandId]);
 
-  const set = (field: string, value: string) => {
+  const set = (field: keyof ProductFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setFieldErrors((prev) => {
-      if (!(field in prev)) return prev;
       const next = { ...prev };
-      delete next[field as keyof ProductFieldErrors];
+      switch (field) {
+        case "brand_id":
+        case "name":
+        case "description":
+        case "price_normal":
+          delete next[field];
+          break;
+        default:
+          break;
+      }
       return next;
     });
   };
