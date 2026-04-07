@@ -89,7 +89,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     const handlePopState = () => {
       if (!isDirty) return;
       if (!confirmLeave()) {
-        window.history.pushState(null, "", window.location.href);
+        window.history.go(1);
       }
     };
 
