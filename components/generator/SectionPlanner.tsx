@@ -79,7 +79,6 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
       if (link.target === "_blank" || link.hasAttribute("download")) return;
 
       const nextUrl = new URL(link.href, window.location.href);
-      const currentPath = `${window.location.pathname}${window.location.search}`;
       const nextPath = `${nextUrl.pathname}${nextUrl.search}`;
       if (currentPath === nextPath) return;
 
