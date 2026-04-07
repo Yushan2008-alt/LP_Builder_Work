@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useBrandContext } from "@/contexts/BrandContext";
 import { useToast } from "@/components/ui/Toast";
 import { FormulaCard } from "./FormulaCard";
@@ -40,6 +41,18 @@ export function FormulaGallery() {
       return matchTier && matchSearch;
     });
   }, [search, activeTier]);
+
+  const groupedByTier = useMemo(
+    () =>
+      FORMULA_TIERS.map((tier) => ({
+        ...tier,
+        formulas: filtered.filter((formula) => formula.tier === tier.id),
+      })).filter((group) => group.formulas.length > 0),
+    [filtered]
+  );
+
+  const disableFormulaSelection =
+    isProjectsLoading || loadingFormulaId !== null || !selectedProductId || !canCreate;
 
   useEffect(() => {
     const framework = searchParams.get("framework");
@@ -106,7 +119,13 @@ export function FormulaGallery() {
           {products.length === 0 ? (
             <p className="text-sm text-blue-600">
               Belum ada produk.{" "}
-              <a href="/products" className="underline font-medium">Tambah produk dulu →</a>
+              <Link
+                href="/products"
+                className="underline font-medium"
+                aria-label="Buka halaman produk untuk menambah produk terlebih dahulu"
+              >
+                Tambah produk dulu
+              </Link>
             </p>
           ) : (
             <select
@@ -125,6 +144,12 @@ export function FormulaGallery() {
           </span>
         </div>
       </div>
+
+      {isProjectsLoading && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          Sedang memuat jumlah project tersimpan. Pilihan formula akan aktif setelah proses selesai.
+        </div>
+      )}
 
       {/* Search + Filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -165,17 +190,43 @@ export function FormulaGallery() {
           <p className="text-gray-400 text-sm">Tidak ada formula yang cocok dengan pencarian kamu.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((formula) => (
-            <FormulaCard
-              key={formula.id}
-              formula={formula}
-              onClick={() => handleSelect(formula.id)}
-              isLoading={loadingFormulaId === formula.id}
-              isPreselected={preselectedFormulaId === formula.id}
-            />
-          ))}
-        </div>
+        activeTier === "all" ? (
+          <div className="space-y-8">
+            {groupedByTier.map((group) => (
+              <section key={group.id}>
+                <div className="mb-3">
+                  <h2 className="text-sm font-semibold text-gray-800">{group.label}</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">{group.description}</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {group.formulas.map((formula) => (
+                    <FormulaCard
+                      key={formula.id}
+                      formula={formula}
+                      onClick={() => handleSelect(formula.id)}
+                      isLoading={loadingFormulaId === formula.id}
+                      isPreselected={preselectedFormulaId === formula.id}
+                      disabled={disableFormulaSelection}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filtered.map((formula) => (
+              <FormulaCard
+                key={formula.id}
+                formula={formula}
+                onClick={() => handleSelect(formula.id)}
+                isLoading={loadingFormulaId === formula.id}
+                isPreselected={preselectedFormulaId === formula.id}
+                disabled={disableFormulaSelection}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );

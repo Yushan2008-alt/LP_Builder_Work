@@ -9,6 +9,7 @@ interface Props {
   onClick: () => void;
   isLoading?: boolean;
   isPreselected?: boolean;
+  disabled?: boolean;
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -27,13 +28,14 @@ const TIER_ACCENT: Record<string, string> = {
   custom: "text-gray-600",
 };
 
-export function FormulaCard({ formula, onClick, isLoading, isPreselected }: Props) {
+export function FormulaCard({ formula, onClick, isLoading, isPreselected, disabled }: Props) {
   const isCustom = formula.id === "custom";
+  const isDisabled = Boolean(isLoading || disabled);
 
   return (
     <button
       onClick={onClick}
-      disabled={isLoading}
+      disabled={isDisabled}
       className={cn(
         "w-full text-left p-5 rounded-2xl border bg-gradient-to-br transition-all duration-150",
         "hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
