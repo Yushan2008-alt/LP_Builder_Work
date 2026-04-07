@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getFriendlyDatabaseError } from "@/lib/utils";
 import type {
   Project, Section, ProjectContextValue,
   CreateSectionInput, UpdateSectionInput
@@ -211,7 +212,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         .from("projects")
         .update({ ...updatableProject, is_dirty: false })
         .eq("id", project.id);
-      if (projectError) throw new Error(projectError.message);
+      if (projectError) throw new Error(getFriendlyDatabaseError(projectError.message));
 
       const initialSections = initialSectionsRef.current;
       const currentSections = sections.map((section, index) => ({
@@ -230,7 +231,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
           .from("sections")
           .delete()
           .in("id", deletedSectionIds);
-        if (deleteError) throw new Error(deleteError.message);
+        if (deleteError) throw new Error(getFriendlyDatabaseError(deleteError.message));
       }
 
       const sectionsToInsert = currentSections.filter((section) => isTempId(section.id));
@@ -248,7 +249,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
           additional_context: section.additional_context,
         }));
         const { error: insertError } = await supabase.from("sections").insert(payload);
-        if (insertError) throw new Error(insertError.message);
+        if (insertError) throw new Error(getFriendlyDatabaseError(insertError.message));
       }
 
       const initialMap = new Map(initialSections.map((section) => [section.id, section]));
@@ -293,7 +294,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
             .eq("id", section.id);
 
           if (updateError) {
-            throw new Error(updateError.message);
+            throw new Error(getFriendlyDatabaseError(updateError.message));
           }
         });
 
@@ -304,7 +305,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         .select("*")
         .eq("project_id", project.id)
         .order("order_index", { ascending: true });
-      if (latestSectionsError) throw new Error(latestSectionsError.message);
+      if (latestSectionsError) throw new Error(getFriendlyDatabaseError(latestSectionsError.message));
 
       const updatedProject = { ...project, is_dirty: false };
       const updatedSections = (latestSections as Section[]) ?? [];
