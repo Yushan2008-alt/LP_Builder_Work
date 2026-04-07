@@ -22,8 +22,24 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [generatedOutput, setGeneratedOutput] = useState("");
 
   const setProject = useCallback((p: Project) => {
-    setProjectState({ ...p, is_dirty: true });
-    setIsDirty(true);
+    setProjectState((prev) => {
+      if (!prev) return p;
+
+      const hasChanged =
+        prev.product_id !== p.product_id ||
+        prev.name !== p.name ||
+        prev.framework !== p.framework ||
+        prev.mode !== p.mode ||
+        prev.tone !== p.tone ||
+        prev.platform !== p.platform ||
+        prev.output_mode !== p.output_mode ||
+        JSON.stringify(prev.global_settings) !== JSON.stringify(p.global_settings);
+
+      if (!hasChanged) return p;
+
+      setIsDirty(true);
+      return { ...p, is_dirty: true };
+    });
   }, []);
 
   const setSections = useCallback((s: Section[]) => {

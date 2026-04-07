@@ -113,7 +113,7 @@ export default function OutputPanel({ output, outputMode, isGenerating }: Output
           <iframe
             srcDoc={sanitizedPreviewHtml}
             className="w-full h-full border-0"
-            sandbox="allow-scripts"
+            sandbox=""
             title="HTML Preview"
           />
         ) : (

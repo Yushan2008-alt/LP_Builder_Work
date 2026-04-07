@@ -54,7 +54,7 @@ export function ProductList({ brand, products }: Props) {
         referenceCount: count ?? 0,
       });
     } catch {
-      showToast("Gagal mengecek referensi project produk ini.", "error");
+      showToast("Gagal memeriksa referensi project produk ini.", "error");
     } finally {
       setIsCheckingDelete(false);
     }
