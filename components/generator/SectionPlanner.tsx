@@ -31,6 +31,8 @@ type SectionValidation = {
   product_id?: string;
 };
 
+const UNSAVED_WARNING_MESSAGE = "Kamu punya perubahan yang belum disimpan. Yakin mau keluar?";
+
 interface SectionPlannerProps {
   projectId: string;
 }
@@ -70,12 +72,11 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
-        e.returnValue = "";
+        e.returnValue = UNSAVED_WARNING_MESSAGE;
       }
     };
 
-    const confirmLeave = () =>
-      window.confirm("Kamu punya perubahan yang belum disimpan. Yakin mau keluar?");
+    const confirmLeave = () => window.confirm(UNSAVED_WARNING_MESSAGE);
 
     const handleDocumentClick = (e: MouseEvent) => {
       if (!isDirty) return;

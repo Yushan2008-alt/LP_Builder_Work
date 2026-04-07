@@ -114,26 +114,33 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchUserLimits, supabase]);
 
   const updateBrand = useCallback(async (id: string, input: UpdateBrandInput): Promise<Brand | null> => {
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
     const { data, error } = await supabase
       .from("brands")
       .update(input)
       .eq("id", id)
+      .eq("user_id", user.id)
       .select()
       .single();
     if (error) throw new Error(getFriendlyDatabaseError(error));
     const brand = data as Brand;
     setBrands((prev) => prev.map((b) => (b.id === id ? brand : b)));
     return brand;
-  }, [supabase]);
+  }, [supabase, user]);
 
   const deleteBrand = useCallback(async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from("brands").delete().eq("id", id);
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
+    const { error } = await supabase.from("brands").delete().eq("id", id).eq("user_id", user.id);
     if (error) throw new Error(getFriendlyDatabaseError(error));
     setBrands((prev) => prev.filter((b) => b.id !== id));
     setProducts((prev) => prev.filter((p) => p.brand_id !== id));
     await fetchUserLimits();
     return true;
-  }, [fetchUserLimits, supabase]);
+  }, [fetchUserLimits, supabase, user]);
 
   const createProduct = useCallback(async (input: CreateProductInput): Promise<Product | null> => {
     if (!user) {
@@ -155,25 +162,32 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchUserLimits, supabase]);
 
   const updateProduct = useCallback(async (id: string, input: UpdateProductInput): Promise<Product | null> => {
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
     const { data, error } = await supabase
       .from("products")
       .update(input)
       .eq("id", id)
+      .eq("user_id", user.id)
       .select()
       .single();
     if (error) throw new Error(getFriendlyDatabaseError(error));
     const product = data as Product;
     setProducts((prev) => prev.map((p) => (p.id === id ? product : p)));
     return product;
-  }, [supabase]);
+  }, [supabase, user]);
 
   const deleteProduct = useCallback(async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
+    const { error } = await supabase.from("products").delete().eq("id", id).eq("user_id", user.id);
     if (error) throw new Error(getFriendlyDatabaseError(error));
     setProducts((prev) => prev.filter((p) => p.id !== id));
     await fetchUserLimits();
     return true;
-  }, [fetchUserLimits, supabase]);
+  }, [fetchUserLimits, supabase, user]);
 
   return (
     <BrandContext.Provider

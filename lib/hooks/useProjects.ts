@@ -47,24 +47,31 @@ export function useProjects() {
   }, [user, supabase]);
 
   const updateProject = useCallback(async (id: string, updates: Partial<Project>): Promise<Project | null> => {
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
     const { data, error } = await supabase
       .from("projects")
       .update(updates)
       .eq("id", id)
+      .eq("user_id", user.id)
       .select()
       .single();
     if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const project = data as Project;
     setProjects((prev) => prev.map((p) => (p.id === id ? project : p)));
     return project;
-  }, [supabase]);
+  }, [supabase, user]);
 
   const deleteProject = useCallback(async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
+    const { error } = await supabase.from("projects").delete().eq("id", id).eq("user_id", user.id);
     if (error) throw new Error(getFriendlyDatabaseError(error.message));
     setProjects((prev) => prev.filter((p) => p.id !== id));
     return true;
-  }, [supabase]);
+  }, [supabase, user]);
 
   const duplicateProject = useCallback(async (sourceProjectId: string): Promise<Project | null> => {
     if (!user) return null;

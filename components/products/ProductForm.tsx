@@ -27,12 +27,15 @@ const EMPTY_PRODUCT_FORM = {
   usp: "",
 };
 
+type ProductFieldErrors = Partial<Record<"brand_id" | "name" | "description" | "price_normal", string>>;
+
 export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
   const { createProduct, updateProduct, userLimits, brands } = useBrandContext();
   const { showToast } = useToast();
   const isEditing = !!product;
   const [isLoading, setIsLoading] = useState(false);
   const maxProducts = userLimits?.max_products ?? 10;
+  const [fieldErrors, setFieldErrors] = useState<ProductFieldErrors>({});
 
   const [form, setForm] = useState(EMPTY_PRODUCT_FORM);
 
@@ -52,18 +55,29 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
     } else {
       setForm({ ...EMPTY_PRODUCT_FORM, brand_id: brandId });
     }
+    setFieldErrors({});
   }, [product, isOpen, brandId]);
 
-  const set = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
+  const set = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setFieldErrors((prev) => {
+      if (!(field in prev)) return prev;
+      const next = { ...prev };
+      delete next[field as keyof ProductFieldErrors];
+      return next;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.brand_id) {
-      showToast("Brand wajib dipilih.", "error");
-      return;
-    }
-    if (!form.name.trim() || !form.description.trim() || !form.price_normal.trim()) {
-      showToast("Nama, deskripsi, dan harga normal wajib diisi.", "error");
+    const nextErrors: ProductFieldErrors = {};
+    if (!form.brand_id) nextErrors.brand_id = "Field ini wajib diisi";
+    if (!form.name.trim()) nextErrors.name = "Field ini wajib diisi";
+    if (!form.description.trim()) nextErrors.description = "Field ini wajib diisi";
+    if (!form.price_normal.trim()) nextErrors.price_normal = "Field ini wajib diisi";
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      showToast("Lengkapi field wajib sebelum menyimpan.", "warning");
       return;
     }
     setIsLoading(true);
@@ -115,7 +129,9 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
               id="product-brand"
               value={form.brand_id}
               onChange={(e) => set("brand_id", e.target.value)}
-              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className={`mt-1 w-full px-3 py-2 border rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                fieldErrors.brand_id ? "border-red-400 focus:ring-red-500" : "border-gray-300"
+              }`}
               required
             >
               <option value="">Pilih brand</option>
@@ -125,15 +141,37 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
                 </option>
               ))}
             </select>
+            {fieldErrors.brand_id && <p className="mt-1 text-xs text-red-600">{fieldErrors.brand_id}</p>}
           </div>
           <div className="col-span-2">
-            <Input label="Nama Produk" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Kelas Online Marketing Digital" required />
+            <Input
+              label="Nama Produk"
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="e.g. Kelas Online Marketing Digital"
+              error={fieldErrors.name}
+              required
+            />
           </div>
           <div className="col-span-2">
-            <Textarea label="Deskripsi Produk" value={form.description} onChange={(e) => set("description", e.target.value)}
-              placeholder="Jelaskan produk kamu secara lengkap — apa itu, bagaimana cara kerjanya, apa yang didapatkan..." rows={4} required />
+            <Textarea
+              label="Deskripsi Produk"
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="Jelaskan produk kamu secara lengkap — apa itu, bagaimana cara kerjanya, apa yang didapatkan..."
+              rows={4}
+              error={fieldErrors.description}
+              required
+            />
           </div>
-          <Input label="Harga Normal" value={form.price_normal} onChange={(e) => set("price_normal", e.target.value)} placeholder="e.g. Rp 997.000" required />
+          <Input
+            label="Harga Normal"
+            value={form.price_normal}
+            onChange={(e) => set("price_normal", e.target.value)}
+            placeholder="e.g. Rp 997.000"
+            error={fieldErrors.price_normal}
+            required
+          />
           <Input label="Harga Promo (opsional)" value={form.price_promo} onChange={(e) => set("price_promo", e.target.value)} placeholder="e.g. Rp 497.000" />
         </div>
 
