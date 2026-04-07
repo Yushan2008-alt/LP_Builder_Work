@@ -108,7 +108,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   // Sync output mode from project
   useEffect(() => {
     if (projectOutputMode) setOutputMode(projectOutputMode);
-  }, [projectOutputMode]);
+  }, [projectOutputMode, setOutputMode]);
 
   // Deep-link output mode override: /generator/:projectId?mode=html|copy
   useEffect(() => {
