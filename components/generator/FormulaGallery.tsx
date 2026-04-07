@@ -127,7 +127,6 @@ export function FormulaGallery() {
               <Link
                 href="/products"
                 className="underline font-medium"
-                aria-label="Buka halaman produk untuk menambah produk terlebih dahulu"
               >
                 Tambah produk dulu
               </Link>
