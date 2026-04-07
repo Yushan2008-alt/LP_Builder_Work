@@ -7,12 +7,14 @@ import { useBrandContext } from "@/contexts/BrandContext";
 import { createClient } from "@/lib/supabase/client";
 import { ProductForm } from "./ProductForm";
 import type { Product, Brand } from "@/lib/types";
-import { formatDate, getLimitReachedMessage } from "@/lib/utils";
+import { formatDate, getFriendlyDatabaseError, getLimitReachedMessage } from "@/lib/utils";
 
 interface Props {
   brand: Brand;
   products: Product[];
 }
+
+const FALLBACK_PRODUCT_REFERENCE_CHECK_ERROR = "Gagal memeriksa referensi proyek produk ini.";
 
 export function ProductList({ brand, products }: Props) {
   const { deleteProduct, products: allProducts, userLimits } = useBrandContext();
@@ -57,15 +59,18 @@ export function ProductList({ brand, products }: Props) {
         .select("*", { count: "exact", head: true })
         .eq("product_id", product.id);
 
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(getFriendlyDatabaseError(error.message));
 
       setDeleteTarget({
         id: product.id,
         name: product.name,
         referenceCount: count ?? 0,
       });
-    } catch {
-      showToast("Gagal memeriksa referensi proyek produk ini.", "error");
+    } catch (err: unknown) {
+      const msg = err instanceof Error
+        ? getFriendlyDatabaseError(err.message)
+        : FALLBACK_PRODUCT_REFERENCE_CHECK_ERROR;
+      showToast(msg, "error");
     } finally {
       setIsCheckingDelete(false);
     }

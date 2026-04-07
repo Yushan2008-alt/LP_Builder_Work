@@ -33,6 +33,25 @@ export function isLimitExceededError(message: string): boolean {
     || normalized.includes("sudah mencapai batas");
 }
 
+export function isSupabaseMissingTableError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  const hasRelationPublicError = normalized.includes('relation "public.');
+  return (
+    (normalized.includes("could not find the table") && normalized.includes("schema cache"))
+    || hasRelationPublicError
+    || normalized.includes("relation does not exist")
+  );
+}
+
+const DATABASE_NOT_READY_MESSAGE = "Database belum siap (tabel belum dibuat). Jalankan SCHEMA.sql di Supabase SQL Editor lalu coba lagi.";
+
+export function getFriendlyDatabaseError(message: string): string {
+  if (isSupabaseMissingTableError(message)) {
+    return DATABASE_NOT_READY_MESSAGE;
+  }
+  return message;
+}
+
 export function formatDateShort(dateString: string): string {
   return new Date(dateString).toLocaleDateString("id-ID", {
     day: "numeric", month: "short",

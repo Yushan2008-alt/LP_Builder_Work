@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Project, CreateProjectInput, Section } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFormulaById } from "@/lib/config/formulas";
+import { getFriendlyDatabaseError } from "@/lib/utils";
 
 export function useProjects() {
   const { user } = useAuth();
@@ -39,7 +40,7 @@ export function useProjects() {
       .insert({ ...input, user_id: user.id, output_mode: input.output_mode ?? "html" })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const project = data as Project;
     setProjects((prev) => [project, ...prev]);
     return project;
@@ -52,7 +53,7 @@ export function useProjects() {
       .eq("id", id)
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const project = data as Project;
     setProjects((prev) => prev.map((p) => (p.id === id ? project : p)));
     return project;
@@ -60,7 +61,7 @@ export function useProjects() {
 
   const deleteProject = useCallback(async (id: string): Promise<boolean> => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     setProjects((prev) => prev.filter((p) => p.id !== id));
     return true;
   }, [supabase]);
@@ -97,7 +98,7 @@ export function useProjects() {
       })
       .select()
       .single();
-    if (createError) throw new Error(createError.message);
+    if (createError) throw new Error(getFriendlyDatabaseError(createError.message));
 
     const duplicatedProject = createdData as Project;
     setProjects((prev) => [duplicatedProject, ...prev]);
@@ -111,10 +112,12 @@ export function useProjects() {
     if (sourceSectionsError) {
       const { error: rollbackError } = await supabase.from("projects").delete().eq("id", duplicatedProject.id);
       if (rollbackError) {
-        throw new Error(`${sourceSectionsError.message} (rollback failed: ${rollbackError.message})`);
+        throw new Error(
+          `${getFriendlyDatabaseError(sourceSectionsError.message)} (rollback failed: ${getFriendlyDatabaseError(rollbackError.message)})`
+        );
       }
       setProjects((prev) => prev.filter((project) => project.id !== duplicatedProject.id));
-      throw new Error(sourceSectionsError.message);
+      throw new Error(getFriendlyDatabaseError(sourceSectionsError.message));
     }
 
     const sourceSections = (sourceSectionsData as Section[]) ?? [];
@@ -142,10 +145,12 @@ export function useProjects() {
     if (duplicateSectionsError) {
       const { error: rollbackError } = await supabase.from("projects").delete().eq("id", duplicatedProject.id);
       if (rollbackError) {
-        throw new Error(`${duplicateSectionsError.message} (rollback failed: ${rollbackError.message})`);
+        throw new Error(
+          `${getFriendlyDatabaseError(duplicateSectionsError.message)} (rollback failed: ${getFriendlyDatabaseError(rollbackError.message)})`
+        );
       }
       setProjects((prev) => prev.filter((project) => project.id !== duplicatedProject.id));
-      throw new Error(duplicateSectionsError.message);
+      throw new Error(getFriendlyDatabaseError(duplicateSectionsError.message));
     }
 
     return duplicatedProject;
@@ -188,10 +193,12 @@ export function useProjects() {
       if (error) {
         const { error: rollbackError } = await supabase.from("projects").delete().eq("id", project.id);
         if (rollbackError) {
-          throw new Error(`${error.message} (rollback failed: ${rollbackError.message})`);
+          throw new Error(
+            `${getFriendlyDatabaseError(error.message)} (rollback failed: ${getFriendlyDatabaseError(rollbackError.message)})`
+          );
         }
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
-        throw new Error(error.message);
+        throw new Error(getFriendlyDatabaseError(error.message));
       }
     }
 
