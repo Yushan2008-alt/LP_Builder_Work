@@ -33,23 +33,46 @@ export function isLimitExceededError(message: string): boolean {
     || normalized.includes("sudah mencapai batas");
 }
 
-export function isSupabaseMissingTableError(message: string): boolean {
-  const normalized = message.toLowerCase();
-  const hasRelationPublicError = normalized.includes('relation "public.');
-  return (
-    (normalized.includes("could not find the table") && normalized.includes("schema cache"))
-    || hasRelationPublicError
-    || normalized.includes("relation does not exist")
-  );
+type DatabaseErrorLike = string | { message?: string | null; code?: string | null };
+
+const APP_DATABASE_TABLES = new Set(["brands", "products", "projects", "sections", "user_limits"]);
+const MISSING_TABLE_ERROR_CODES = new Set(["42P01", "PGRST205"]);
+
+function extractDatabaseErrorMessage(error: DatabaseErrorLike): string {
+  if (typeof error === "string") return error;
+  return error.message ?? "";
+}
+
+function isAppDatabaseTable(tableName: string): boolean {
+  return APP_DATABASE_TABLES.has(tableName.toLowerCase());
+}
+
+export function isSupabaseMissingTableError(error: DatabaseErrorLike): boolean {
+  if (typeof error !== "string" && error.code && MISSING_TABLE_ERROR_CODES.has(error.code)) {
+    return true;
+  }
+
+  const message = extractDatabaseErrorMessage(error);
+  const schemaCacheMatch = message.match(/could not find the table ['"](?:public\.)?([a-z_]+)['"]/i);
+  if (schemaCacheMatch?.[1] && isAppDatabaseTable(schemaCacheMatch[1])) {
+    return true;
+  }
+
+  const missingRelationMatch = message.match(/relation\s+"(?:public\.)?([a-z_]+)"\s+does not exist/i);
+  if (missingRelationMatch?.[1] && isAppDatabaseTable(missingRelationMatch[1])) {
+    return true;
+  }
+
+  return false;
 }
 
 const DATABASE_NOT_READY_MESSAGE = "Database belum siap (tabel belum dibuat). Jalankan SCHEMA.sql di Supabase SQL Editor lalu coba lagi.";
 
-export function getFriendlyDatabaseError(message: string): string {
-  if (isSupabaseMissingTableError(message)) {
+export function getFriendlyDatabaseError(error: DatabaseErrorLike): string {
+  if (isSupabaseMissingTableError(error)) {
     return DATABASE_NOT_READY_MESSAGE;
   }
-  return message;
+  return extractDatabaseErrorMessage(error) || "Terjadi kesalahan pada database.";
 }
 
 export function formatDateShort(dateString: string): string {
