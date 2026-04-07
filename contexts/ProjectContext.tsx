@@ -23,12 +23,14 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [generatedOutput, setGeneratedOutput] = useState("");
   const initialProjectRef = useRef<Project | null>(null);
   const initialSectionsRef = useRef<Section[]>([]);
+  const tempIdCounterRef = useRef(0);
 
   const makeTempId = () => {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
       return `tmp-${crypto.randomUUID()}`;
     }
-    return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    tempIdCounterRef.current += 1;
+    return `tmp-${Date.now()}-${tempIdCounterRef.current}`;
   };
 
   const isTempId = (id: string) => id.startsWith("tmp-");
