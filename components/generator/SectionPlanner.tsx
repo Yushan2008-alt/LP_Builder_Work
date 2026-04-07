@@ -29,6 +29,7 @@ type SectionValidation = {
   section_goals?: string;
   layout_format?: string;
   product_id?: string;
+  style_custom?: string;
 };
 
 const UNSAVED_WARNING_MESSAGE = "Kamu punya perubahan yang belum disimpan. Yakin mau keluar?";
@@ -173,6 +174,9 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
       if (!section.section_goals.trim()) errors.section_goals = "Field ini wajib diisi";
       if (!section.layout_format.trim()) errors.layout_format = "Field ini wajib diisi";
       if (!section.product_id) errors.product_id = "Field ini wajib diisi";
+      if (section.style_mode === "custom" && !(section.style_custom ?? "").trim()) {
+        errors.style_custom = "Field ini wajib diisi";
+      }
       if (Object.keys(errors).length > 0) {
         nextErrors[section.id] = errors;
       }
@@ -273,7 +277,9 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
       updates.section_title !== undefined ||
       updates.section_goals !== undefined ||
       updates.layout_format !== undefined ||
-      updates.product_id !== undefined;
+      updates.product_id !== undefined ||
+      updates.style_mode !== undefined ||
+      updates.style_custom !== undefined;
     if (hasTouchedValidatedField) {
       setSectionValidationErrors((prev) => {
         if (!prev[id]) return prev;

@@ -15,6 +15,7 @@ interface SectionEditorProps {
     section_goals?: string;
     layout_format?: string;
     product_id?: string;
+    style_custom?: string;
   };
 }
 
@@ -35,7 +36,7 @@ export default function SectionEditor({ section, onUpdate, validationErrors }: S
   function handleStyleModeToggle(mode: "default" | "custom") {
     onUpdate(section.id, {
       style_mode: mode,
-      style_custom: mode === "default" ? undefined : section.style_custom,
+      style_custom: mode === "default" ? null : section.style_custom,
     });
   }
 
@@ -180,8 +181,16 @@ export default function SectionEditor({ section, onUpdate, validationErrors }: S
             onChange={(e) => handleField("style_custom", e.target.value)}
             placeholder="Deskripsikan style yang diinginkan. Contoh: Gunakan dark background (#1a1a1a) dengan teks putih, aksen warna emas untuk CTA, dan typography serif untuk headline."
             rows={3}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={cn(
+              "w-full px-3 py-2 text-sm border rounded-lg resize-none focus:outline-none focus:ring-2 focus:border-transparent",
+              validationErrors?.style_custom
+                ? "border-red-300 focus:ring-red-500"
+                : "border-gray-300 focus:ring-blue-500"
+            )}
           />
+        )}
+        {validationErrors?.style_custom && (
+          <p className="mt-1 text-xs text-red-500">{validationErrors.style_custom}</p>
         )}
 
         {section.style_mode === "default" && (
