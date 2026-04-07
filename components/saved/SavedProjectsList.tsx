@@ -150,7 +150,7 @@ export default function SavedProjectsList() {
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
         title="Hapus Project"
         message={`Yakin ingin menghapus project "${deleteTarget?.name}"? Semua seksi di dalamnya akan ikut terhapus dan tidak bisa dikembalikan.`}
-        confirmLabel="Hapus"
+        confirmText="Hapus"
         isLoading={isDeleting}
         variant="danger"
       />
