@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getFriendlyDatabaseError } from "@/lib/utils";
 import type {
   Brand, Product, UserLimits,
   CreateBrandInput, UpdateBrandInput,
@@ -105,7 +106,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       .insert({ ...input, name: brandName, user_id: user.id })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const brand = data as Brand;
     setBrands((prev) => [...prev, brand]);
     await fetchUserLimits();
@@ -119,7 +120,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       .eq("id", id)
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const brand = data as Brand;
     setBrands((prev) => prev.map((b) => (b.id === id ? brand : b)));
     return brand;
@@ -127,7 +128,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
 
   const deleteBrand = useCallback(async (id: string): Promise<boolean> => {
     const { error } = await supabase.from("brands").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     setBrands((prev) => prev.filter((b) => b.id !== id));
     setProducts((prev) => prev.filter((p) => p.brand_id !== id));
     await fetchUserLimits();
@@ -146,7 +147,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       .insert({ ...input, user_id: user.id })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const product = data as Product;
     setProducts((prev) => [...prev, product]);
     await fetchUserLimits();
@@ -160,7 +161,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
       .eq("id", id)
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const product = data as Product;
     setProducts((prev) => prev.map((p) => (p.id === id ? product : p)));
     return product;
@@ -168,7 +169,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
 
   const deleteProduct = useCallback(async (id: string): Promise<boolean> => {
     const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(getFriendlyDatabaseError(error.message));
     setProducts((prev) => prev.filter((p) => p.id !== id));
     await fetchUserLimits();
     return true;
