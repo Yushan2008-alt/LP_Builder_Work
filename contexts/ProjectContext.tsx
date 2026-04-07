@@ -35,7 +35,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         prev.output_mode !== p.output_mode ||
         JSON.stringify(prev.global_settings) !== JSON.stringify(p.global_settings);
 
-      if (!hasChanged) return p;
+      if (!hasChanged) return prev;
 
       setIsDirty(true);
       return { ...p, is_dirty: true };
@@ -211,7 +211,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
       const { error } = await supabase
         .from("projects")
-        .update({ ...updatableProject, is_dirty: false })
+        .update({ ...updatableProject, is_dirty: false, updated_at: new Date().toISOString() })
         .eq("id", project.id);
       if (error) throw new Error(error.message);
       setProjectState((prev) => prev ? { ...prev, is_dirty: false } : null);
