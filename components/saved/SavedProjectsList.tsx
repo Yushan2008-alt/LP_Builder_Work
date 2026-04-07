@@ -5,17 +5,18 @@ import { useRouter } from "next/navigation";
 import { useProjects } from "@/lib/hooks/useProjects";
 import { useBrandContext } from "@/contexts/BrandContext";
 import { Project } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getLimitReachedMessage, isLimitExceededError } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmDialog } from "@/components/ui/Modal";
 
 export default function SavedProjectsList() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { projects, isLoading, fetchProjects, deleteProject } = useProjects();
-  const { products } = useBrandContext();
+  const { projects, isLoading, fetchProjects, deleteProject, duplicateProject } = useProjects();
+  const { products, userLimits } = useBrandContext();
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -42,6 +43,35 @@ export default function SavedProjectsList() {
     formula: "bg-purple-100 text-purple-700",
     custom: "bg-gray-100 text-gray-600",
   };
+  const maxProjects = userLimits?.max_projects ?? 4;
+  const isProjectLimitReached = projects.length >= maxProjects;
+  const projectLimitMessage = getLimitReachedMessage(maxProjects, "project");
+
+  async function handleDuplicate(project: Project) {
+    if (isProjectLimitReached) {
+      showToast(projectLimitMessage, "error");
+      return;
+    }
+    setDuplicatingId(project.id);
+    try {
+      const duplicated = await duplicateProject(project.id);
+      if (!duplicated) {
+        showToast("Gagal menduplikasi project", "error");
+        return;
+      }
+      showToast(`Project "${project.name}" berhasil diduplikasi.`, "success");
+      router.push(`/generator/${duplicated.id}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal menduplikasi project";
+      if (isLimitExceededError(msg)) {
+        showToast(projectLimitMessage, "error");
+      } else {
+        showToast(msg, "error");
+      }
+    } finally {
+      setDuplicatingId(null);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -57,12 +87,19 @@ export default function SavedProjectsList() {
         <div>
           <h1 className="text-xl font-bold text-gray-900">Saved Projects</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {projects.length} dari 4 project
+            {projects.length} dari {maxProjects} project
           </p>
         </div>
         <button
-          onClick={() => router.push("/generator/new")}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          onClick={() => {
+            if (isProjectLimitReached) {
+              showToast(projectLimitMessage, "error");
+              return;
+            }
+            router.push("/generator/new");
+          }}
+          disabled={isProjectLimitReached}
+          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           + Buat Project Baru
         </button>
@@ -129,6 +166,13 @@ export default function SavedProjectsList() {
                     className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Buka →
+                  </button>
+                  <button
+                    onClick={() => handleDuplicate(project)}
+                    disabled={duplicatingId === project.id || isProjectLimitReached}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {duplicatingId === project.id ? "Duplikasi..." : "Duplikasi"}
                   </button>
                   <button
                     onClick={() => setDeleteTarget(project)}

@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { BrandCard } from "./BrandCard";
 import { BrandGuidelinesModal } from "./BrandGuidelinesModal";
 import type { Brand } from "@/lib/types";
+import { getLimitReachedMessage, isLimitExceededError } from "@/lib/utils";
 
 export function ProductDashboard() {
   const { brands, products, userLimits, createBrand, isLoading } = useBrandContext();
@@ -38,8 +39,8 @@ export function ProductDashboard() {
       showToast("Brand berhasil dibuat!", "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal membuat brand";
-      if (msg.toLowerCase().includes("limit")) {
-        showToast(`Batas maksimum ${maxBrands} brand telah tercapai.`, "error");
+      if (isLimitExceededError(msg)) {
+        showToast(getLimitReachedMessage(maxBrands, "brand"), "error");
       } else {
         showToast(msg, "error");
       }

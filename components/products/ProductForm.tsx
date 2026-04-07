@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useBrandContext } from "@/contexts/BrandContext";
 import type { Product, CreateProductInput, UpdateProductInput } from "@/lib/types";
+import { getLimitReachedMessage, isLimitExceededError } from "@/lib/utils";
 
 interface Props {
   isOpen: boolean;
@@ -26,10 +27,11 @@ const EMPTY_PRODUCT_FORM = {
 };
 
 export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
-  const { createProduct, updateProduct } = useBrandContext();
+  const { createProduct, updateProduct, userLimits } = useBrandContext();
   const { showToast } = useToast();
   const isEditing = !!product;
   const [isLoading, setIsLoading] = useState(false);
+  const maxProducts = userLimits?.max_products ?? 10;
 
   const [form, setForm] = useState(EMPTY_PRODUCT_FORM);
 
@@ -83,8 +85,8 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
-      if (msg.includes("limit")) {
-        showToast("Batas maksimum 10 produk telah tercapai.", "error");
+      if (isLimitExceededError(msg)) {
+        showToast(getLimitReachedMessage(maxProducts, "produk"), "error");
       } else {
         showToast(msg, "error");
       }

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Project, CreateProjectInput } from "@/lib/types";
+import type { Project, CreateProjectInput, Section } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { getFormulaById } from "@/lib/config/formulas";
 
@@ -11,15 +11,25 @@ export function useProjects() {
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchProjects = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setProjects([]);
+      return;
+    }
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
-    if (!error && data) setProjects(data as Project[]);
-    setIsLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false });
+      if (error) {
+        setProjects([]);
+        return;
+      }
+      setProjects((data as Project[]) ?? []);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user, supabase]);
 
   const createProject = useCallback(async (input: CreateProjectInput): Promise<Project | null> => {
@@ -55,6 +65,91 @@ export function useProjects() {
     return true;
   }, [supabase]);
 
+  const duplicateProject = useCallback(async (sourceProjectId: string): Promise<Project | null> => {
+    if (!user) return null;
+    const sourceProject = projects.find((p) => p.id === sourceProjectId);
+    if (!sourceProject) {
+      throw new Error("Source project not found.");
+    }
+
+    const usedNames = new Set(projects.map((project) => project.name.trim().toLowerCase()));
+    const baseName = `${sourceProject.name} (Copy)`;
+    let copiedName = baseName;
+    let suffix = 2;
+    while (usedNames.has(copiedName.trim().toLowerCase())) {
+      copiedName = `${baseName} ${suffix}`;
+      suffix += 1;
+    }
+
+    const { data: createdData, error: createError } = await supabase
+      .from("projects")
+      .insert({
+        user_id: user.id,
+        product_id: sourceProject.product_id,
+        name: copiedName,
+        framework: sourceProject.framework,
+        mode: sourceProject.mode,
+        tone: sourceProject.tone,
+        platform: sourceProject.platform,
+        output_mode: sourceProject.output_mode,
+        global_settings: sourceProject.global_settings ?? {},
+        is_dirty: false,
+      })
+      .select()
+      .single();
+    if (createError) throw new Error(createError.message);
+
+    const duplicatedProject = createdData as Project;
+    setProjects((prev) => [duplicatedProject, ...prev]);
+
+    const { data: sourceSectionsData, error: sourceSectionsError } = await supabase
+      .from("sections")
+      .select("*")
+      .eq("project_id", sourceProjectId)
+      .order("order_index", { ascending: true });
+
+    if (sourceSectionsError) {
+      const { error: rollbackError } = await supabase.from("projects").delete().eq("id", duplicatedProject.id);
+      if (rollbackError) {
+        throw new Error(`${sourceSectionsError.message} (rollback failed: ${rollbackError.message})`);
+      }
+      setProjects((prev) => prev.filter((project) => project.id !== duplicatedProject.id));
+      throw new Error(sourceSectionsError.message);
+    }
+
+    const sourceSections = (sourceSectionsData as Section[]) ?? [];
+    if (sourceSections.length === 0) {
+      return duplicatedProject;
+    }
+
+    const duplicatedSectionsPayload = sourceSections.map((section, index) => ({
+      project_id: duplicatedProject.id,
+      order_index: index,
+      section_title: section.section_title,
+      section_goals: section.section_goals,
+      layout_format: section.layout_format,
+      style_mode: section.style_mode,
+      style_custom: section.style_custom,
+      framework_position: section.framework_position,
+      additional_context: section.additional_context,
+    }));
+
+    const { error: duplicateSectionsError } = await supabase
+      .from("sections")
+      .insert(duplicatedSectionsPayload);
+
+    if (duplicateSectionsError) {
+      const { error: rollbackError } = await supabase.from("projects").delete().eq("id", duplicatedProject.id);
+      if (rollbackError) {
+        throw new Error(`${duplicateSectionsError.message} (rollback failed: ${rollbackError.message})`);
+      }
+      setProjects((prev) => prev.filter((project) => project.id !== duplicatedProject.id));
+      throw new Error(duplicateSectionsError.message);
+    }
+
+    return duplicatedProject;
+  }, [user, projects, supabase]);
+
   // Create a new project from a formula, auto-generating sections
   const createProjectFromFormula = useCallback(async (
     formulaId: string,
@@ -88,7 +183,14 @@ export function useProjects() {
         framework_position: s.frameworkPosition,
       }));
       const { error } = await supabase.from("sections").insert(sectionsToInsert);
-      if (error) throw new Error(error.message);
+      if (error) {
+        const { error: rollbackError } = await supabase.from("projects").delete().eq("id", project.id);
+        if (rollbackError) {
+          throw new Error(`${error.message} (rollback failed: ${rollbackError.message})`);
+        }
+        setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        throw new Error(error.message);
+      }
     }
 
     return project.id;
@@ -97,6 +199,6 @@ export function useProjects() {
   return {
     projects, isLoading,
     fetchProjects, createProject, createProjectFromFormula,
-    updateProject, deleteProject,
+    updateProject, deleteProject, duplicateProject,
   };
 }

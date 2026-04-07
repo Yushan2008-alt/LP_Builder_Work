@@ -14,10 +14,25 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [redirectAfterAuth, setRedirectAfterAuth] = useState("/products");
 
   useEffect(() => {
-    if (!isLoading && user) router.replace("/products");
-  }, [user, isLoading, router]);
+    const params = new URLSearchParams(window.location.search);
+    const candidate = params.get("next") ?? params.get("redirectedFrom");
+    if (!candidate) {
+      setRedirectAfterAuth("/products");
+      return;
+    }
+    if (!candidate.startsWith("/") || candidate.startsWith("//")) {
+      setRedirectAfterAuth("/products");
+      return;
+    }
+    setRedirectAfterAuth(candidate);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && user) router.replace(redirectAfterAuth);
+  }, [user, isLoading, router, redirectAfterAuth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +45,7 @@ function LoginForm() {
       if (mode === "login") {
         const { error } = await signIn(email, password);
         if (error) { setError(error); return; }
-        router.replace("/products");
+        router.replace(redirectAfterAuth);
       } else {
         const { error } = await signUp(email, password);
         if (error) { setError(error); return; }

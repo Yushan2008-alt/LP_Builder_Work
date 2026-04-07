@@ -7,7 +7,7 @@ import { useBrandContext } from "@/contexts/BrandContext";
 import { createClient } from "@/lib/supabase/client";
 import { ProductForm } from "./ProductForm";
 import type { Product, Brand } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getLimitReachedMessage } from "@/lib/utils";
 
 interface Props {
   brand: Brand;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function ProductList({ brand, products }: Props) {
-  const { deleteProduct } = useBrandContext();
+  const { deleteProduct, products: allProducts, userLimits } = useBrandContext();
   const { showToast } = useToast();
   const supabase = createClient();
   const [editProduct, setEditProduct] = useState<Product | null>(null);
@@ -23,6 +23,17 @@ export function ProductList({ brand, products }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [isCheckingDelete, setIsCheckingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const maxProducts = userLimits?.max_products ?? 10;
+  const canAddProduct = allProducts.length < maxProducts;
+
+  const handleOpenCreateProduct = () => {
+    if (!canAddProduct) {
+      showToast(getLimitReachedMessage(maxProducts, "produk"), "error");
+      return;
+    }
+    setEditProduct(null);
+    setShowForm(true);
+  };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -65,9 +76,14 @@ export function ProductList({ brand, products }: Props) {
       {products.length === 0 ? (
         <div className="py-6 text-center">
           <p className="text-sm text-gray-400 mb-3">Belum ada produk di brand ini</p>
-          <Button size="sm" variant="outline" onClick={() => setShowForm(true)}>
+          <Button size="sm" variant="outline" onClick={handleOpenCreateProduct} disabled={!canAddProduct}>
             + Tambah Produk
           </Button>
+          {!canAddProduct && (
+            <p className="mt-2 text-xs text-red-500">
+              Batas maksimal produk untuk akun tercapai ({allProducts.length}/{maxProducts}).
+            </p>
+          )}
         </div>
       ) : (
         <div className="divide-y divide-gray-50">
@@ -115,13 +131,16 @@ export function ProductList({ brand, products }: Props) {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => {
-                setEditProduct(null);
-                setShowForm(true);
-              }}
+              onClick={handleOpenCreateProduct}
+              disabled={!canAddProduct}
             >
               + Tambah Produk
             </Button>
+            {!canAddProduct && (
+              <p className="mt-1 text-xs text-red-500">
+                Batas maksimal produk untuk akun tercapai ({allProducts.length}/{maxProducts}).
+              </p>
+            )}
           </div>
         </div>
       )}
