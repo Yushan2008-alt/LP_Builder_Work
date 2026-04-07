@@ -91,7 +91,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
         layout_format: "standard_image",
         style_mode: "default",
       });
-    } catch (err) {
+    } catch {
       showToast("Gagal menambah seksi", "error");
     }
   }
@@ -144,7 +144,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
       const prompt = assemblePrompt({ project, product, brand, sections });
       setGeneratedOutput(prompt);
       showToast("Prompt berhasil dibuat! Copy dan paste ke Claude/ChatGPT.", "success");
-    } catch (err) {
+    } catch {
       showToast("Gagal membuat prompt", "error");
     } finally {
       setIsGenerating(false);

@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useBrandContext } from "@/contexts/BrandContext";
 import { useProjects } from "@/lib/hooks/useProjects";
 import { useEffect } from "react";
 
