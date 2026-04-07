@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import DOMPurify from "dompurify";
 import { copyToClipboard, downloadHtml, downloadText } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 
@@ -14,6 +15,10 @@ export default function OutputPanel({ output, outputMode, isGenerating }: Output
   const [showPreview, setShowPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
+  const sanitizedPreviewHtml = useMemo(
+    () => (outputMode === "html" ? DOMPurify.sanitize(output) : ""),
+    [output, outputMode]
+  );
 
   async function handleCopy() {
     const ok = await copyToClipboard(output);
@@ -106,9 +111,9 @@ export default function OutputPanel({ output, outputMode, isGenerating }: Output
           </div>
         ) : showPreview && outputMode === "html" ? (
           <iframe
-            srcDoc={output}
+            srcDoc={sanitizedPreviewHtml}
             className="w-full h-full border-0"
-            sandbox="allow-scripts allow-same-origin"
+            sandbox="allow-scripts"
             title="HTML Preview"
           />
         ) : (

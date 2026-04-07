@@ -22,7 +22,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [generatedOutput, setGeneratedOutput] = useState("");
 
   const setProject = useCallback((p: Project) => {
-    setProjectState(p);
+    setProjectState({ ...p, is_dirty: true });
+    setIsDirty(true);
   }, []);
 
   const setSections = useCallback((s: Section[]) => {
@@ -94,15 +95,29 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   const deleteSection = useCallback(async (id: string): Promise<void> => {
-    const { error } = await supabase.from("sections").delete().eq("id", id);
-    if (error) throw new Error(error.message);
-    setSectionsState((prev) => {
-      const filtered = prev.filter((s) => s.id !== id);
-      // Re-index order_index
-      return filtered.map((s, i) => ({ ...s, order_index: i }));
-    });
+    const previousSections = sections;
+    const nextSections = previousSections
+      .filter((s) => s.id !== id)
+      .map((s, i) => ({ ...s, order_index: i }));
+
+    setSectionsState(nextSections);
     setIsDirty(true);
-  }, [supabase]);
+
+    try {
+      const { error: deleteError } = await supabase.from("sections").delete().eq("id", id);
+      if (deleteError) throw new Error(deleteError.message);
+
+      const reorderUpdates = nextSections.map((s) =>
+        supabase.from("sections").update({ order_index: s.order_index }).eq("id", s.id)
+      );
+      const reorderResults = await Promise.all(reorderUpdates);
+      const failed = reorderResults.find((result) => result.error);
+      if (failed?.error) throw new Error(failed.error.message);
+    } catch (error) {
+      setSectionsState(previousSections);
+      throw error;
+    }
+  }, [sections, supabase]);
 
   const duplicateSection = useCallback(async (id: string): Promise<void> => {
     const original = sections.find((s) => s.id === id);
@@ -144,24 +159,43 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, [sections, project, supabase]);
 
   const reorderSections = useCallback(async (newSections: Section[]): Promise<void> => {
+    const previousSections = sections;
     const reindexed = newSections.map((s, i) => ({ ...s, order_index: i }));
+
     setSectionsState(reindexed);
     setIsDirty(true);
-    // Persist to DB
-    await Promise.all(
-      reindexed.map((s) =>
+
+    try {
+      const updates = reindexed.map((s) =>
         supabase.from("sections").update({ order_index: s.order_index }).eq("id", s.id)
-      )
-    );
-  }, [supabase]);
+      );
+      const results = await Promise.all(updates);
+      const failed = results.find((result) => result.error);
+      if (failed?.error) throw new Error(failed.error.message);
+    } catch (error) {
+      setSectionsState(previousSections);
+      throw error;
+    }
+  }, [sections, supabase]);
 
   const saveProject = useCallback(async (): Promise<boolean> => {
     if (!project) return false;
     setIsSaving(true);
     try {
+      const updatableProject = {
+        product_id: project.product_id,
+        name: project.name,
+        framework: project.framework,
+        mode: project.mode,
+        tone: project.tone,
+        platform: project.platform,
+        output_mode: project.output_mode,
+        global_settings: project.global_settings,
+      };
+
       const { error } = await supabase
         .from("projects")
-        .update({ ...project, is_dirty: false, updated_at: new Date().toISOString() })
+        .update({ ...updatableProject, is_dirty: false })
         .eq("id", project.id);
       if (error) throw new Error(error.message);
       setProjectState((prev) => prev ? { ...prev, is_dirty: false } : null);

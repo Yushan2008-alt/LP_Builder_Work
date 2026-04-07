@@ -124,7 +124,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     setOutputMode(mode);
   }, [project, searchParams]);
 
-  function handleDragEnd(event: DragEndEvent) {
+  async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const oldIndex = sections.findIndex((s) => s.id === active.id);
@@ -133,7 +133,11 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     const reordered = [...sections];
     const [moved] = reordered.splice(oldIndex, 1);
     reordered.splice(newIndex, 0, moved);
-    reorderSections(reordered);
+    try {
+      await reorderSections(reordered);
+    } catch {
+      showToast("Gagal menyimpan urutan section. Urutan dikembalikan.", "error");
+    }
   }
 
   async function handleAddSection() {
