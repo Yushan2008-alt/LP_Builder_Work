@@ -14,6 +14,8 @@ interface Props {
   products: Product[];
 }
 
+const CHECK_PRODUCT_REFERENCE_ERROR_MESSAGE = "Gagal memeriksa referensi proyek produk ini.";
+
 export function ProductList({ brand, products }: Props) {
   const { deleteProduct, products: allProducts, userLimits } = useBrandContext();
   const { showToast } = useToast();
@@ -67,7 +69,7 @@ export function ProductList({ brand, products }: Props) {
     } catch (err: unknown) {
       const msg = err instanceof Error
         ? getFriendlyDatabaseError(err.message)
-        : "Gagal memeriksa referensi proyek produk ini.";
+        : CHECK_PRODUCT_REFERENCE_ERROR_MESSAGE;
       showToast(msg, "error");
     } finally {
       setIsCheckingDelete(false);
