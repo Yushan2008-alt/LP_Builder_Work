@@ -63,7 +63,7 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
       return;
     }
     if (!form.name.trim() || !form.description.trim() || !form.price_normal.trim()) {
-      showToast("Brand, nama, deskripsi, dan harga normal wajib diisi.", "error");
+      showToast("Nama, deskripsi, dan harga normal wajib diisi.", "error");
       return;
     }
     setIsLoading(true);
