@@ -7,7 +7,7 @@ import { useBrandContext } from "@/contexts/BrandContext";
 import { createClient } from "@/lib/supabase/client";
 import { ProductForm } from "./ProductForm";
 import type { Product, Brand } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getLimitReachedMessage } from "@/lib/utils";
 
 interface Props {
   brand: Brand;
@@ -28,7 +28,7 @@ export function ProductList({ brand, products }: Props) {
 
   const handleOpenCreateProduct = () => {
     if (!canAddProduct) {
-      showToast(`Kamu sudah mencapai batas ${maxProducts} produk.`, "error");
+      showToast(getLimitReachedMessage(maxProducts, "produk"), "error");
       return;
     }
     setEditProduct(null);

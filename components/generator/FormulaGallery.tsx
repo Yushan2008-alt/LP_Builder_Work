@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { FormulaCard } from "./FormulaCard";
 import { FORMULAS, FORMULA_TIERS } from "@/lib/config/formulas";
 import { useProjects } from "@/lib/hooks/useProjects";
-import { generateProjectName } from "@/lib/utils";
+import { generateProjectName, getLimitReachedMessage, isLimitExceededError } from "@/lib/utils";
 import type { FormulaTier } from "@/lib/config/formulas";
 
 export function FormulaGallery() {
@@ -25,6 +25,7 @@ export function FormulaGallery() {
 
   const maxProjects = userLimits?.max_projects ?? 4;
   const canCreate = projects.length < maxProjects;
+  const projectLimitMessage = getLimitReachedMessage(maxProjects, "project");
 
   useEffect(() => {
     fetchProjects();
@@ -70,7 +71,7 @@ export function FormulaGallery() {
       return;
     }
     if (!canCreate) {
-      showToast(`Batas maksimum ${maxProjects} project telah tercapai. Hapus project lama dulu.`, "error");
+      showToast(projectLimitMessage, "error");
       return;
     }
     if (!selectedProductId) {
@@ -91,7 +92,11 @@ export function FormulaGallery() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal membuat project";
-      showToast(msg, "error");
+      if (isLimitExceededError(msg)) {
+        showToast(projectLimitMessage, "error");
+      } else {
+        showToast(msg, "error");
+      }
     } finally {
       setLoadingFormulaId(null);
     }

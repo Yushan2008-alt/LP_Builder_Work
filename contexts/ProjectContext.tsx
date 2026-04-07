@@ -251,8 +251,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         .map(async (section) => {
           const initial = initialMap.get(section.id);
           if (!initial) {
-            console.warn("Section baseline not found during save", { sectionId: section.id });
-            return;
+            throw new Error(
+              `Section baseline mismatch for "${section.id}". Reload project sebelum menyimpan ulang untuk menjaga konsistensi data.`
+            );
           }
 
           const hasChanged =

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useProjects } from "@/lib/hooks/useProjects";
 import { useBrandContext } from "@/contexts/BrandContext";
 import { Project } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getLimitReachedMessage, isLimitExceededError } from "@/lib/utils";
 import { useToast } from "@/components/ui/Toast";
 import { ConfirmDialog } from "@/components/ui/Modal";
 
@@ -45,10 +45,7 @@ export default function SavedProjectsList() {
   };
   const maxProjects = userLimits?.max_projects ?? 4;
   const isProjectLimitReached = projects.length >= maxProjects;
-
-  const projectLimitMessage = maxProjects === 4
-    ? "Kamu sudah mencapai batas 4 project."
-    : `Kamu sudah mencapai batas ${maxProjects} project.`;
+  const projectLimitMessage = getLimitReachedMessage(maxProjects, "project");
 
   async function handleDuplicate(project: Project) {
     if (isProjectLimitReached) {
@@ -66,7 +63,7 @@ export default function SavedProjectsList() {
       router.push(`/generator/${duplicated.id}`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menduplikasi project";
-      if (msg.toLowerCase().includes("project limit exceeded")) {
+      if (isLimitExceededError(msg)) {
         showToast(projectLimitMessage, "error");
       } else {
         showToast(msg, "error");
