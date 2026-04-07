@@ -37,6 +37,10 @@ export function ProductDashboard() {
       showToast(`Nama brand maksimal ${MAX_BRAND_NAME_LENGTH} karakter.`, "error");
       return;
     }
+    if (!canAddBrand) {
+      showToast(getLimitReachedMessage(maxBrands, "brand"), "error");
+      return;
+    }
     setIsCreating(true);
     try {
       const brand = await createBrand({ name: trimmedName });
@@ -177,7 +181,7 @@ export function ProductDashboard() {
             Setelah brand dibuat, kamu bisa atur font, warna, dan vibe-nya di Brand Guidelines.
           </p>
           <div className="flex gap-3 justify-end">
-            <Button type="button" variant="ghost" onClick={() => setShowAddBrand(false)}>
+            <Button type="button" variant="ghost" onClick={() => { setShowAddBrand(false); setNewBrandName(""); }}>
               Batal
             </Button>
             <Button type="submit" isLoading={isCreating}>
