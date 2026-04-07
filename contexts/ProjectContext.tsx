@@ -252,7 +252,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
           const initial = initialMap.get(section.id);
           if (!initial) {
             throw new Error(
-              `Section baseline mismatch for "${section.id}". Reload project sebelum menyimpan ulang untuk menjaga konsistensi data.`
+              `Baseline section untuk "${section.id}" tidak sinkron. Muat ulang project sebelum menyimpan untuk menjaga konsistensi data.`
             );
           }
 

@@ -128,7 +128,7 @@ export function FormulaGallery() {
                 href="/products"
                 className="underline font-medium"
               >
-                Tambah produk dulu
+                Tambah produk dulu →
               </Link>
             </p>
           ) : (
