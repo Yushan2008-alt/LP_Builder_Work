@@ -273,21 +273,30 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     id: string,
     updates: Parameters<typeof updateSection>[1]
   ) {
-    const hasTouchedValidatedField =
-      updates.section_title !== undefined ||
-      updates.section_goals !== undefined ||
-      updates.layout_format !== undefined ||
-      updates.product_id !== undefined ||
-      updates.style_mode !== undefined ||
-      updates.style_custom !== undefined;
-    if (hasTouchedValidatedField) {
-      setSectionValidationErrors((prev) => {
-        if (!prev[id]) return prev;
-        const next = { ...prev };
+    setSectionValidationErrors((prev) => {
+      const existing = prev[id];
+      if (!existing) return prev;
+
+      const nextSectionErrors: SectionValidation = { ...existing };
+      if (updates.section_title !== undefined) delete nextSectionErrors.section_title;
+      if (updates.section_goals !== undefined) delete nextSectionErrors.section_goals;
+      if (updates.layout_format !== undefined) delete nextSectionErrors.layout_format;
+      if (updates.product_id !== undefined) delete nextSectionErrors.product_id;
+      if (
+        updates.style_mode === "default" ||
+        (updates.style_custom !== undefined && !!(updates.style_custom ?? "").trim())
+      ) {
+        delete nextSectionErrors.style_custom;
+      }
+
+      const next = { ...prev };
+      if (Object.keys(nextSectionErrors).length === 0) {
         delete next[id];
-        return next;
-      });
-    }
+      } else {
+        next[id] = nextSectionErrors;
+      }
+      return next;
+    });
     void updateSection(id, updates);
   }
 

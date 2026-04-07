@@ -28,7 +28,19 @@ const EMPTY_PRODUCT_FORM = {
 };
 
 type ProductFormState = typeof EMPTY_PRODUCT_FORM;
-type ProductFieldErrors = Partial<Record<"brand_id" | "name" | "description" | "price_normal", string>>;
+const PRODUCT_REQUIRED_ERROR_FIELDS = [
+  "brand_id",
+  "name",
+  "description",
+  "price_normal",
+ ] as const;
+type ProductRequiredErrorField = (typeof PRODUCT_REQUIRED_ERROR_FIELDS)[number];
+type ProductFieldErrors = Partial<Record<ProductRequiredErrorField, string>>;
+const PRODUCT_REQUIRED_ERROR_FIELD_SET: ReadonlySet<ProductRequiredErrorField> = new Set(PRODUCT_REQUIRED_ERROR_FIELDS);
+
+function isProductRequiredErrorField(field: keyof ProductFormState): field is keyof ProductFieldErrors {
+  return PRODUCT_REQUIRED_ERROR_FIELD_SET.has(field as ProductRequiredErrorField);
+}
 
 export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
   const { createProduct, updateProduct, userLimits, brands } = useBrandContext();
@@ -63,15 +75,8 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setFieldErrors((prev) => {
       const next = { ...prev };
-      switch (field) {
-        case "brand_id":
-        case "name":
-        case "description":
-        case "price_normal":
-          delete next[field];
-          break;
-        default:
-          break;
+      if (isProductRequiredErrorField(field)) {
+        delete next[field];
       }
       return next;
     });

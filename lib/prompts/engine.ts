@@ -418,7 +418,7 @@ export function canGenerate(project: Project | null, sections: Section[], produc
       s.section_goals.trim().length > 0 &&
       s.layout_format.trim().length > 0 &&
       !!s.product_id &&
-      (s.style_mode !== "custom" || !!s.style_custom?.trim())
+      (s.style_mode !== "custom" || (s.style_custom?.trim() ?? "").length > 0)
   );
   return allSectionsValid;
 }
