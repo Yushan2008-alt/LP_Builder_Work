@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type {
   Project, Section, ProjectContextValue,
@@ -12,7 +12,7 @@ const ProjectContext = createContext<ProjectContextValue | undefined>(undefined)
 
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [project, setProjectState] = useState<Project | null>(null);
   const [sections, setSectionsState] = useState<Section[]>([]);
@@ -30,19 +30,41 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loadProject = useCallback(async (projectId: string) => {
+    if (!user) {
+      setProjectState(null);
+      setSectionsState([]);
+      setIsDirty(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      const [{ data: projectData }, { data: sectionsData }] = await Promise.all([
-        supabase.from("projects").select("*").eq("id", projectId).single(),
-        supabase.from("sections").select("*").eq("project_id", projectId).order("order_index", { ascending: true }),
-      ]);
-      if (projectData) setProjectState(projectData as Project);
-      if (sectionsData) setSectionsState(sectionsData as Section[]);
+      const { data: projectData } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("id", projectId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!projectData) {
+        setProjectState(null);
+        setSectionsState([]);
+        setIsDirty(false);
+        return;
+      }
+
+      const { data: sectionsData } = await supabase
+        .from("sections")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("order_index", { ascending: true });
+
+      setProjectState(projectData as Project);
+      setSectionsState((sectionsData as Section[]) ?? []);
       setIsDirty(false);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [supabase, user]);
 
   const addSection = useCallback(async (input: Omit<CreateSectionInput, "project_id">): Promise<Section | null> => {
     if (!project) return null;
@@ -56,7 +78,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     setSectionsState((prev) => [...prev, section].sort((a, b) => a.order_index - b.order_index));
     setIsDirty(true);
     return section;
-  }, [project]);
+  }, [project, supabase]);
 
   const updateSection = useCallback(async (id: string, input: UpdateSectionInput): Promise<void> => {
     const { data, error } = await supabase
@@ -69,7 +91,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     const updated = data as Section;
     setSectionsState((prev) => prev.map((s) => (s.id === id ? updated : s)));
     setIsDirty(true);
-  }, []);
+  }, [supabase]);
 
   const deleteSection = useCallback(async (id: string): Promise<void> => {
     const { error } = await supabase.from("sections").delete().eq("id", id);
@@ -80,7 +102,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       return filtered.map((s, i) => ({ ...s, order_index: i }));
     });
     setIsDirty(true);
-  }, []);
+  }, [supabase]);
 
   const duplicateSection = useCallback(async (id: string): Promise<void> => {
     const original = sections.find((s) => s.id === id);
@@ -119,7 +141,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       return [...shifted, newSection].sort((a, b) => a.order_index - b.order_index);
     });
     setIsDirty(true);
-  }, [sections, project]);
+  }, [sections, project, supabase]);
 
   const reorderSections = useCallback(async (newSections: Section[]): Promise<void> => {
     const reindexed = newSections.map((s, i) => ({ ...s, order_index: i }));
@@ -131,7 +153,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         supabase.from("sections").update({ order_index: s.order_index }).eq("id", s.id)
       )
     );
-  }, []);
+  }, [supabase]);
 
   const saveProject = useCallback(async (): Promise<boolean> => {
     if (!project) return false;
@@ -148,7 +170,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsSaving(false);
     }
-  }, [project]);
+  }, [project, supabase]);
 
   return (
     <ProjectContext.Provider

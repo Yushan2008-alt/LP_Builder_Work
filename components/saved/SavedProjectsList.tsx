@@ -19,7 +19,7 @@ export default function SavedProjectsList() {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
   async function handleDelete(project: Project) {
     setIsDeleting(true);

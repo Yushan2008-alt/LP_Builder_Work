@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -30,6 +30,7 @@ interface SectionPlannerProps {
 
 export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const {
     project, sections, isDirty, isLoading, isSaving, generatedOutput,
@@ -41,6 +42,8 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   const { products, brands } = useBrandContext();
   const [isGenerating, setIsGenerating] = useState(false);
   const [outputMode, setOutputMode] = useState<"html" | "copy">("html");
+  const projectOutputMode = project?.output_mode;
+  const isHandlingPopStateRef = useRef(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -50,24 +53,76 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   // Load project on mount
   useEffect(() => {
     loadProject(projectId);
-  }, [projectId]);
+  }, [projectId, loadProject]);
 
   // Warn before leaving with unsaved changes
   useEffect(() => {
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
+
+    const confirmLeave = () =>
+      window.confirm("Kamu punya perubahan yang belum disimpan. Yakin mau keluar?");
+
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (!isDirty) return;
+      if (e.defaultPrevented) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const target = e.target as Element | null;
+      const link = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!link) return;
+      if (link.target === "_blank" || link.hasAttribute("download")) return;
+
+      const nextUrl = new URL(link.href, window.location.href);
+      const nextPath = `${nextUrl.pathname}${nextUrl.search}`;
+      if (currentPath === nextPath) return;
+
+      if (!confirmLeave()) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    const handlePopState = () => {
+      if (isHandlingPopStateRef.current) {
+        isHandlingPopStateRef.current = false;
+        return;
+      }
+      if (!isDirty) return;
+      if (!confirmLeave()) {
+        isHandlingPopStateRef.current = true;
+        window.history.pushState(null, "", currentPath);
+      }
+    };
+
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("click", handleDocumentClick, true);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleDocumentClick, true);
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [isDirty]);
 
   // Sync output mode from project
   useEffect(() => {
-    if (project) setOutputMode(project.output_mode);
-  }, [project?.output_mode]);
+    if (projectOutputMode) setOutputMode(projectOutputMode);
+  }, [projectOutputMode, setOutputMode]);
+
+  // Deep-link output mode override: /generator/:projectId?mode=html|copy
+  useEffect(() => {
+    if (!project) return;
+    const mode = searchParams.get("mode");
+    if (mode !== "html" && mode !== "copy") return;
+    setOutputMode(mode);
+  }, [project, searchParams]);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -125,6 +180,10 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
 
   function handleGenerate() {
     if (!project) return;
+    if (!canGeneratePrompt) {
+      if (generateDisabledReason) showToast(generateDisabledReason, "warning");
+      return;
+    }
     const product = products.find((p) => p.id === project.product_id);
     if (!product) {
       showToast("Produk tidak ditemukan", "error");
@@ -141,7 +200,8 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     }
     setIsGenerating(true);
     try {
-      const prompt = assemblePrompt({ project, product, brand, sections });
+      const projectForGeneration = { ...project, output_mode: outputMode };
+      const prompt = assemblePrompt({ project: projectForGeneration, product, brand, sections });
       setGeneratedOutput(prompt);
       showToast("Prompt berhasil dibuat! Copy dan paste ke Claude/ChatGPT.", "success");
     } catch {
@@ -168,6 +228,16 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   }
 
   const currentProduct = project ? products.find((p) => p.id === project.product_id) : null;
+  const generateDisabledReason = isGenerating
+    ? "Sedang memproses prompt"
+    : !project?.product_id || !currentProduct
+      ? "Pilih produk terlebih dahulu"
+      : sections.length === 0
+        ? "Tambah minimal 1 section"
+        : !canGenerate(project, sections, project.product_id)
+          ? "Lengkapi judul dan goals semua section"
+          : "";
+  const canGeneratePrompt = generateDisabledReason === "";
 
   if (isLoading) {
     return (
@@ -207,7 +277,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
               )}
               {isDirty && (
                 <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded font-medium flex-shrink-0">
-                  Unsaved
+                  Belum disimpan
                 </span>
               )}
             </div>
@@ -285,14 +355,15 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
             </button>
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || sections.length === 0}
+              disabled={!canGeneratePrompt}
+              title={generateDisabledReason || "Generate prompt"}
               className={`px-4 py-1.5 text-xs rounded-lg font-semibold transition-colors ${
-                !isGenerating && sections.length > 0
+                canGeneratePrompt
                   ? "bg-blue-600 text-white hover:bg-blue-700"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
             >
-              {isGenerating ? "Generating..." : "⚡ Generate Prompt"}
+              {isGenerating ? "Memproses..." : "⚡ Generate Prompt"}
             </button>
           </div>
         </div>
@@ -307,6 +378,12 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
               Seksi ({sections.length})
             </h2>
           </div>
+
+          {sections.length > 15 && (
+            <div className="mx-4 mt-3 mb-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              Lebih dari 15 section bisa menghasilkan prompt yang terlalu panjang.
+            </div>
+          )}
 
           <div className="flex-1 p-4 space-y-2 overflow-y-auto">
             <DndContext

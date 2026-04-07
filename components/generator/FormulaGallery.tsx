@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useBrandContext } from "@/contexts/BrandContext";
 import { useToast } from "@/components/ui/Toast";
 import { FormulaCard } from "./FormulaCard";
@@ -11,6 +11,7 @@ import type { FormulaTier } from "@/lib/config/formulas";
 
 export function FormulaGallery() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { products, userLimits } = useBrandContext();
   const { createProjectFromFormula, projects } = useProjects();
   const { showToast } = useToast();
@@ -19,6 +20,7 @@ export function FormulaGallery() {
   const [activeTier, setActiveTier] = useState<FormulaTier | "all">("all");
   const [loadingFormulaId, setLoadingFormulaId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [preselectedFormulaId, setPreselectedFormulaId] = useState<string | null>(null);
 
   const maxProjects = userLimits?.max_projects ?? 4;
   const canCreate = projects.length < maxProjects;
@@ -34,6 +36,16 @@ export function FormulaGallery() {
       return matchTier && matchSearch;
     });
   }, [search, activeTier]);
+
+  useEffect(() => {
+    const framework = searchParams.get("framework");
+    if (!framework) {
+      setPreselectedFormulaId(null);
+      return;
+    }
+    const exists = FORMULAS.some((formula) => formula.id === framework);
+    setPreselectedFormulaId(exists ? framework : null);
+  }, [searchParams]);
 
   const handleSelect = async (formulaId: string) => {
     if (!canCreate) {
@@ -152,6 +164,7 @@ export function FormulaGallery() {
               formula={formula}
               onClick={() => handleSelect(formula.id)}
               isLoading={loadingFormulaId === formula.id}
+              isPreselected={preselectedFormulaId === formula.id}
             />
           ))}
         </div>

@@ -14,14 +14,24 @@ interface Props {
   product?: Product | null;
 }
 
+const EMPTY_PRODUCT_FORM = {
+  name: "",
+  description: "",
+  price_normal: "",
+  price_promo: "",
+  target_audience: "",
+  pain_points: "",
+  objections: "",
+  usp: "",
+};
+
 export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
   const { createProduct, updateProduct } = useBrandContext();
   const { showToast } = useToast();
   const isEditing = !!product;
   const [isLoading, setIsLoading] = useState(false);
 
-  const empty = { name: "", description: "", price_normal: "", price_promo: "", target_audience: "", pain_points: "", objections: "", usp: "" };
-  const [form, setForm] = useState(empty);
+  const [form, setForm] = useState(EMPTY_PRODUCT_FORM);
 
   useEffect(() => {
     if (product) {
@@ -36,7 +46,7 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
         usp: product.usp ?? "",
       });
     } else {
-      setForm(empty);
+      setForm(EMPTY_PRODUCT_FORM);
     }
   }, [product, isOpen]);
 

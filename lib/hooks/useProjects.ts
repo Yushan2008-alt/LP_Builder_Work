@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Project, CreateProjectInput } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,7 +6,7 @@ import { getFormulaById } from "@/lib/config/formulas";
 
 export function useProjects() {
   const { user } = useAuth();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,7 +20,7 @@ export function useProjects() {
       .order("updated_at", { ascending: false });
     if (!error && data) setProjects(data as Project[]);
     setIsLoading(false);
-  }, [user]);
+  }, [user, supabase]);
 
   const createProject = useCallback(async (input: CreateProjectInput): Promise<Project | null> => {
     if (!user) return null;
@@ -33,7 +33,7 @@ export function useProjects() {
     const project = data as Project;
     setProjects((prev) => [project, ...prev]);
     return project;
-  }, [user]);
+  }, [user, supabase]);
 
   const updateProject = useCallback(async (id: string, updates: Partial<Project>): Promise<Project | null> => {
     const { data, error } = await supabase
@@ -46,14 +46,14 @@ export function useProjects() {
     const project = data as Project;
     setProjects((prev) => prev.map((p) => (p.id === id ? project : p)));
     return project;
-  }, []);
+  }, [supabase]);
 
   const deleteProject = useCallback(async (id: string): Promise<boolean> => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
     if (error) throw new Error(error.message);
     setProjects((prev) => prev.filter((p) => p.id !== id));
     return true;
-  }, []);
+  }, [supabase]);
 
   // Create a new project from a formula, auto-generating sections
   const createProjectFromFormula = useCallback(async (
@@ -92,7 +92,7 @@ export function useProjects() {
     }
 
     return project.id;
-  }, [user, createProject]);
+  }, [user, createProject, supabase]);
 
   return {
     projects, isLoading,
