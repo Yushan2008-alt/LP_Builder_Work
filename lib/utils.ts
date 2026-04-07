@@ -20,3 +20,52 @@ export function generateProjectName(formulaName: string, productName: string): s
   const date = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
   return `${productName} — ${formulaName} (${date})`;
 }
+
+export function formatDateShort(dateString: string): string {
+  return new Date(dateString).toLocaleDateString("id-ID", {
+    day: "numeric", month: "short",
+  });
+}
+
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Fallback for older browsers
+    try {
+      const el = document.createElement("textarea");
+      el.value = text;
+      el.style.position = "fixed";
+      el.style.opacity = "0";
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+export function downloadText(content: string, filename: string): void {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function downloadHtml(content: string, filename: string): void {
+  const blob = new Blob([content], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
