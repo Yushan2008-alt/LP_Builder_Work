@@ -42,6 +42,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   const { products, brands } = useBrandContext();
   const [isGenerating, setIsGenerating] = useState(false);
   const [outputMode, setOutputMode] = useState<"html" | "copy">("html");
+  const projectOutputMode = project?.output_mode;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -55,6 +56,8 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
 
   // Warn before leaving with unsaved changes
   useEffect(() => {
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
@@ -89,7 +92,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     const handlePopState = () => {
       if (!isDirty) return;
       if (!confirmLeave()) {
-        window.history.go(1);
+        window.history.pushState(null, "", currentPath);
       }
     };
 
@@ -105,8 +108,8 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
 
   // Sync output mode from project
   useEffect(() => {
-    if (project) setOutputMode(project.output_mode);
-  }, [project]);
+    if (projectOutputMode) setOutputMode(projectOutputMode);
+  }, [projectOutputMode]);
 
   // Deep-link output mode override: /generator/:projectId?mode=html|copy
   useEffect(() => {
