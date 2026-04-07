@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
 import { useBrandContext } from "@/contexts/BrandContext";
 import { useToast } from "@/components/ui/Toast";
 import { FormulaCard } from "./FormulaCard";
@@ -12,7 +11,6 @@ import type { FormulaTier } from "@/lib/config/formulas";
 
 export function FormulaGallery() {
   const router = useRouter();
-  const { user } = useAuth();
   const { products, userLimits } = useBrandContext();
   const { createProjectFromFormula, projects } = useProjects();
   const { showToast } = useToast();
