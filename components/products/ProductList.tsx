@@ -81,7 +81,7 @@ export function ProductList({ brand, products }: Props) {
           </Button>
           {!canAddProduct && (
             <p className="mt-2 text-xs text-red-500">
-              Batas maksimal produk tercapai ({allProducts.length}/{maxProducts}).
+              Batas maksimal produk untuk akun tercapai ({allProducts.length}/{maxProducts}).
             </p>
           )}
         </div>
@@ -138,7 +138,7 @@ export function ProductList({ brand, products }: Props) {
             </Button>
             {!canAddProduct && (
               <p className="mt-1 text-xs text-red-500">
-                Batas maksimal produk tercapai ({allProducts.length}/{maxProducts}).
+                Batas maksimal produk untuk akun tercapai ({allProducts.length}/{maxProducts}).
               </p>
             )}
           </div>
