@@ -58,7 +58,7 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.brand_id.trim()) {
+    if (!form.brand_id) {
       showToast("Brand wajib dipilih.", "error");
       return;
     }
@@ -118,7 +118,7 @@ export function ProductForm({ isOpen, onClose, brandId, product }: Props) {
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              <option value="" disabled>Pilih brand</option>
+              <option value="">Pilih brand</option>
               {brands.map((brand) => (
                 <option key={brand.id} value={brand.id}>
                   {brand.name}
