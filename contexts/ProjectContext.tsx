@@ -92,7 +92,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         .order("order_index", { ascending: true });
 
       const nextProject = projectData as Project;
-      const nextSections = (sectionsData as Section[]) ?? [];
+      const nextSections = ((sectionsData as Section[]) ?? []).map((section) => ({
+        ...section,
+        product_id: section.product_id ?? nextProject.product_id,
+      }));
       setProjectState(nextProject);
       setSectionsState(nextSections);
       setIsDirty(false);
@@ -108,6 +111,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     const section: Section = {
       id: makeTempId(),
       project_id: project.id,
+      product_id: input.product_id ?? project.product_id,
       order_index: input.order_index,
       section_title: input.section_title,
       section_goals: input.section_goals,
@@ -165,6 +169,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       ...original,
       id: makeTempId(),
       project_id: project.id,
+      product_id: original.product_id ?? project.product_id,
       order_index: newOrderIndex,
       section_title: `${original.section_title} (Copy)`,
       created_at: new Date().toISOString(),
@@ -232,6 +237,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       if (sectionsToInsert.length > 0) {
         const payload = sectionsToInsert.map((section) => ({
           project_id: project.id,
+          product_id: section.product_id ?? project.product_id,
           order_index: section.order_index,
           section_title: section.section_title,
           section_goals: section.section_goals,
@@ -258,6 +264,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
           const hasChanged =
             initial.order_index !== section.order_index ||
+            initial.product_id !== section.product_id ||
             initial.section_title !== section.section_title ||
             initial.section_goals !== section.section_goals ||
             initial.layout_format !== section.layout_format ||
@@ -274,6 +281,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
             .from("sections")
             .update({
               order_index: section.order_index,
+              product_id: section.product_id ?? project.product_id,
               section_title: section.section_title,
               section_goals: section.section_goals,
               layout_format: section.layout_format,

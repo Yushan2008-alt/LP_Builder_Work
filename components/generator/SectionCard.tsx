@@ -14,6 +14,12 @@ interface SectionCardProps {
   onUpdate: (id: string, updates: UpdateSectionInput) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  validationErrors?: {
+    section_title?: string;
+    section_goals?: string;
+    layout_format?: string;
+    product_id?: string;
+  };
 }
 
 export default function SectionCard({
@@ -22,6 +28,7 @@ export default function SectionCard({
   onUpdate,
   onDelete,
   onDuplicate,
+  validationErrors,
 }: SectionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -62,7 +69,9 @@ export default function SectionCard({
         "bg-white border rounded-lg overflow-hidden transition-shadow",
         isDragging
           ? "shadow-2xl border-blue-400 opacity-90 z-50"
-          : "border-gray-200 shadow-sm hover:shadow-md"
+          : validationErrors
+            ? "border-red-300 shadow-sm hover:shadow-md"
+            : "border-gray-200 shadow-sm hover:shadow-md"
       )}
     >
       {/* Card Header */}
@@ -173,7 +182,7 @@ export default function SectionCard({
 
       {/* Expandable Editor */}
       {isExpanded && (
-        <SectionEditor section={section} onUpdate={onUpdate} />
+        <SectionEditor section={section} onUpdate={onUpdate} validationErrors={validationErrors} />
       )}
     </div>
   );

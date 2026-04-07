@@ -10,6 +10,8 @@ import { BrandGuidelinesModal } from "./BrandGuidelinesModal";
 import type { Brand } from "@/lib/types";
 import { getLimitReachedMessage, isLimitExceededError } from "@/lib/utils";
 
+const MAX_BRAND_NAME_LENGTH = 100;
+
 export function ProductDashboard() {
   const { brands, products, userLimits, createBrand, isLoading } = useBrandContext();
   const { showToast } = useToast();
@@ -26,16 +28,25 @@ export function ProductDashboard() {
 
   const handleCreateBrand = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newBrandName.trim()) return;
+    const trimmedName = newBrandName.trim();
+    if (!trimmedName) {
+      showToast("Nama brand wajib diisi.", "error");
+      return;
+    }
+    if (trimmedName.length > MAX_BRAND_NAME_LENGTH) {
+      showToast(`Nama brand maksimal ${MAX_BRAND_NAME_LENGTH} karakter.`, "error");
+      return;
+    }
     setIsCreating(true);
     try {
-      const brand = await createBrand({ name: newBrandName.trim() });
+      const brand = await createBrand({ name: trimmedName });
+      if (!brand) {
+        throw new Error("Brand gagal dibuat. Coba lagi.");
+      }
       setNewBrandName("");
       setShowAddBrand(false);
-      if (brand) {
-        setNewBrand(brand);
-        setShowGuidelinesForNew(true);
-      }
+      setNewBrand(brand);
+      setShowGuidelinesForNew(true);
       showToast("Brand berhasil dibuat!", "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal membuat brand";

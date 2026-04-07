@@ -191,7 +191,9 @@ function renderSectionBlock(
   index: number,
   vars: ResolvedVars,
   project: Project,
-  productName: string
+  productName: string,
+  sectionProduct?: Product,
+  sectionBrand?: Brand
 ): string {
   const layoutInstruction = getLayoutInstruction(section.layout_format);
 
@@ -208,6 +210,11 @@ function renderSectionBlock(
   const additionalContextLine = section.additional_context
     ? `**Additional Context:**\n${section.additional_context}`
     : "";
+
+  const sectionProductLine =
+    sectionProduct && sectionBrand
+      ? `**Section Product Override:**\nUse this section's selected product instead of the global product brief when writing this section.\n- Product: ${sectionProduct.name}\n- Brand: ${sectionBrand.name}\n- Description: ${sectionProduct.description}\n- Normal Price: ${sectionProduct.price_normal}${sectionProduct.price_promo ? `\n- Promo Price: ${sectionProduct.price_promo}` : ""}${sectionProduct.target_audience ? `\n- Target Audience: ${sectionProduct.target_audience}` : ""}${sectionProduct.pain_points ? `\n- Pain Points: ${sectionProduct.pain_points}` : ""}${sectionProduct.objections ? `\n- Objections: ${sectionProduct.objections}` : ""}${sectionProduct.usp ? `\n- USP: ${sectionProduct.usp}` : ""}`
+      : "";
 
   const parts = [
     `--- SECTION ${index}: "${section.section_title}" ---`,
@@ -228,6 +235,10 @@ function renderSectionBlock(
 
   if (additionalContextLine) {
     parts.push("", additionalContextLine);
+  }
+
+  if (sectionProductLine) {
+    parts.push("", sectionProductLine);
   }
 
   parts.push(
@@ -349,9 +360,11 @@ export interface AssemblePromptInput {
   product: Product;
   brand: Brand;
   sections: Section[];
+  products?: Product[];
+  brands?: Brand[];
 }
 
-export function assemblePrompt({ project, product, brand, sections }: AssemblePromptInput): string {
+export function assemblePrompt({ project, product, brand, sections, products = [], brands = [] }: AssemblePromptInput): string {
   const vars = resolveVariables(brand);
   const platform = project.platform ?? "wordpress";
   const tone = project.tone ?? "profesional dan persuasif";
@@ -373,8 +386,15 @@ export function assemblePrompt({ project, product, brand, sections }: AssemblePr
   // Layer 3: Section Blocks
   layers.push("=== SECTION BLOCKS ===");
   const sortedSections = [...sections].sort((a, b) => a.order_index - b.order_index);
+  const productsById = new Map(products.map((item) => [item.id, item]));
+  const brandsById = new Map(brands.map((item) => [item.id, item]));
   sortedSections.forEach((section, i) => {
-    layers.push(renderSectionBlock(section, i + 1, vars, project, product.name));
+    const sectionProduct =
+      section.product_id && section.product_id !== product.id
+        ? productsById.get(section.product_id)
+        : undefined;
+    const sectionBrand = sectionProduct ? brandsById.get(sectionProduct.brand_id) : undefined;
+    layers.push(renderSectionBlock(section, i + 1, vars, project, product.name, sectionProduct, sectionBrand));
   });
 
   // Layer 4: Output Instruction
@@ -396,7 +416,8 @@ export function canGenerate(project: Project | null, sections: Section[], produc
     (s) =>
       s.section_title.trim().length > 0 &&
       s.section_goals.trim().length > 0 &&
-      s.layout_format.trim().length > 0
+      s.layout_format.trim().length > 0 &&
+      !!s.product_id
   );
   return allSectionsValid;
 }

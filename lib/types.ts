@@ -54,6 +54,7 @@ export interface Project {
 export interface Section {
   id: string;
   project_id: string;
+  product_id: string | null;
   order_index: number;
   section_title: string;
   section_goals: string;
@@ -105,7 +106,7 @@ export type CreateProductInput = {
   usp?: string | null;
 };
 
-export type UpdateProductInput = Partial<Omit<CreateProductInput, "brand_id">>;
+export type UpdateProductInput = Partial<CreateProductInput>;
 
 export type CreateProjectInput = {
   product_id: string;
@@ -121,6 +122,7 @@ export type UpdateProjectInput = Partial<Omit<CreateProjectInput, "product_id">>
 
 export type CreateSectionInput = {
   project_id: string;
+  product_id?: string | null;
   order_index: number;
   section_title: string;
   section_goals: string;

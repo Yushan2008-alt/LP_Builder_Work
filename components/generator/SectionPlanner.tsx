@@ -24,6 +24,13 @@ import SectionCard from "./SectionCard";
 import OutputPanel from "./OutputPanel";
 import { useToast } from "@/components/ui/Toast";
 
+type SectionValidation = {
+  section_title?: string;
+  section_goals?: string;
+  layout_format?: string;
+  product_id?: string;
+};
+
 interface SectionPlannerProps {
   projectId: string;
 }
@@ -42,6 +49,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   const { products, brands } = useBrandContext();
   const [isGenerating, setIsGenerating] = useState(false);
   const [outputMode, setOutputMode] = useState<"html" | "copy">("html");
+  const [sectionValidationErrors, setSectionValidationErrors] = useState<Record<string, SectionValidation>>({});
   const projectOutputMode = project?.output_mode;
   const isHandlingPopStateRef = useRef(false);
 
@@ -144,6 +152,7 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     if (!project) return;
     try {
       await addSection({
+        product_id: project.product_id,
         order_index: sections.length,
         section_title: `Seksi ${sections.length + 1}`,
         section_goals: "",
@@ -156,6 +165,23 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
   }
 
   async function handleSave() {
+    const nextErrors: Record<string, SectionValidation> = {};
+    sections.forEach((section) => {
+      const errors: SectionValidation = {};
+      if (!section.section_title.trim()) errors.section_title = "Field ini wajib diisi";
+      if (!section.section_goals.trim()) errors.section_goals = "Field ini wajib diisi";
+      if (!section.layout_format.trim()) errors.layout_format = "Field ini wajib diisi";
+      if (!section.product_id) errors.product_id = "Field ini wajib diisi";
+      if (Object.keys(errors).length > 0) {
+        nextErrors[section.id] = errors;
+      }
+    });
+    setSectionValidationErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      showToast("Lengkapi field wajib sebelum menyimpan.", "warning");
+      return;
+    }
+
     try {
       const ok = await saveProject();
       if (ok) showToast("Project berhasil disimpan!", "success");
@@ -205,7 +231,14 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     setIsGenerating(true);
     try {
       const projectForGeneration = { ...project, output_mode: outputMode };
-      const prompt = assemblePrompt({ project: projectForGeneration, product, brand, sections });
+      const prompt = assemblePrompt({
+        project: projectForGeneration,
+        product,
+        brand,
+        sections,
+        products,
+        brands,
+      });
       setGeneratedOutput(prompt);
       showToast("Prompt berhasil dibuat! Copy dan paste ke Claude/ChatGPT.", "success");
     } catch {
@@ -231,15 +264,35 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     setProject({ ...project, output_mode: mode });
   }
 
+  function handleUpdateSection(
+    id: string,
+    updates: Parameters<typeof updateSection>[1]
+  ) {
+    const hasTouchedValidatedField =
+      updates.section_title !== undefined ||
+      updates.section_goals !== undefined ||
+      updates.layout_format !== undefined ||
+      updates.product_id !== undefined;
+    if (hasTouchedValidatedField) {
+      setSectionValidationErrors((prev) => {
+        if (!prev[id]) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
+    void updateSection(id, updates);
+  }
+
   const currentProduct = project ? products.find((p) => p.id === project.product_id) : null;
   const generateDisabledReason = isGenerating
     ? "Sedang memproses prompt"
     : !project?.product_id || !currentProduct
       ? "Pilih produk terlebih dahulu"
-      : sections.length === 0
-        ? "Tambah minimal 1 section"
+        : sections.length === 0
+          ? "Tambah minimal 1 section"
         : !canGenerate(project, sections, project.product_id)
-          ? "Lengkapi judul dan goals semua section"
+          ? "Lengkapi produk, judul, goals, dan layout semua section"
           : "";
   const canGeneratePrompt = generateDisabledReason === "";
 
@@ -404,9 +457,10 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
                     key={section.id}
                     section={section}
                     index={index}
-                    onUpdate={updateSection}
+                    onUpdate={handleUpdateSection}
                     onDelete={handleDelete}
                     onDuplicate={handleDuplicate}
+                    validationErrors={sectionValidationErrors[section.id]}
                   />
                 ))}
               </SortableContext>

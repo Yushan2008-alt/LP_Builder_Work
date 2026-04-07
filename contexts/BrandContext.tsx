@@ -93,10 +93,16 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchBrands, fetchProducts, fetchUserLimits]);
 
   const createBrand = useCallback(async (input: CreateBrandInput): Promise<Brand | null> => {
-    if (!user) return null;
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
+    const brandName = input.name?.trim();
+    if (!brandName) {
+      throw new Error("Nama brand wajib diisi.");
+    }
     const { data, error } = await supabase
       .from("brands")
-      .insert({ ...input, user_id: user.id })
+      .insert({ ...input, name: brandName, user_id: user.id })
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -129,7 +135,12 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   }, [fetchUserLimits, supabase]);
 
   const createProduct = useCallback(async (input: CreateProductInput): Promise<Product | null> => {
-    if (!user) return null;
+    if (!user) {
+      throw new Error("Sesi login tidak ditemukan. Silakan login ulang.");
+    }
+    if (!input.brand_id?.trim()) {
+      throw new Error("Brand produk wajib dipilih.");
+    }
     const { data, error } = await supabase
       .from("products")
       .insert({ ...input, user_id: user.id })
