@@ -150,7 +150,11 @@ export function FormulaGallery() {
       </div>
 
       {isProjectsLoading && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        <div
+          className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700"
+          role="status"
+          aria-live="polite"
+        >
           Sedang memuat jumlah project tersimpan. Pilihan formula akan aktif setelah proses selesai.
         </div>
       )}

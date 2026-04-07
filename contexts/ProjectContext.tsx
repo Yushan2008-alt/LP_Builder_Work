@@ -252,7 +252,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
           const initial = initialMap.get(section.id);
           if (!initial) {
             throw new Error(
-              `Baseline section untuk "${section.section_title}" tidak sinkron. Muat ulang project sebelum menyimpan untuk menjaga konsistensi data.`
+              `Baseline section untuk "${section.section_title}" tidak sinkron. Refresh halaman sebelum menyimpan untuk menjaga konsistensi data.`
             );
           }
 

@@ -27,7 +27,10 @@ export function getLimitReachedMessage(limit: number, resourceLabel: "brand" | "
 
 export function isLimitExceededError(message: string): boolean {
   const normalized = message.toLowerCase();
-  return normalized.includes("limit exceeded") || normalized.includes("batas maksimum") || normalized.includes("mencapai batas");
+  return normalized.includes("limit exceeded")
+    || normalized.includes("batas maksimum")
+    || normalized.includes("mencapai batas")
+    || normalized.includes("sudah mencapai batas");
 }
 
 export function formatDateShort(dateString: string): string {
