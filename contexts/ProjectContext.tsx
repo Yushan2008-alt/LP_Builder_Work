@@ -111,7 +111,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   const deleteSection = useCallback(async (id: string): Promise<void> => {
-    const previousSections = sections;
+    const previousSections = sections.map((section) => ({ ...section }));
     const nextSections = previousSections
       .filter((s) => s.id !== id)
       .map((s, i) => ({ ...s, order_index: i }));
@@ -175,7 +175,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, [sections, project, supabase]);
 
   const reorderSections = useCallback(async (newSections: Section[]): Promise<void> => {
-    const previousSections = sections;
+    const previousSections = sections.map((section) => ({ ...section }));
     const reindexed = newSections.map((s, i) => ({ ...s, order_index: i }));
 
     setSectionsState(reindexed);
