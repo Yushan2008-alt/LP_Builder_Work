@@ -28,7 +28,6 @@ type SectionValidation = {
   section_title?: string;
   section_goals?: string;
   layout_format?: string;
-  product_id?: string;
   style_custom?: string;
 };
 
@@ -173,7 +172,6 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
       if (!section.section_title.trim()) errors.section_title = "Field ini wajib diisi";
       if (!section.section_goals.trim()) errors.section_goals = "Field ini wajib diisi";
       if (!section.layout_format.trim()) errors.layout_format = "Field ini wajib diisi";
-      if (!section.product_id) errors.product_id = "Field ini wajib diisi";
       if (section.style_mode === "custom" && !(section.style_custom ?? "").trim()) {
         errors.style_custom = "Field ini wajib diisi";
       }
@@ -281,7 +279,6 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
       if (updates.section_title !== undefined) delete nextSectionErrors.section_title;
       if (updates.section_goals !== undefined) delete nextSectionErrors.section_goals;
       if (updates.layout_format !== undefined) delete nextSectionErrors.layout_format;
-      if (updates.product_id !== undefined) delete nextSectionErrors.product_id;
       if (
         updates.style_mode === "default" ||
         (updates.style_custom !== undefined && !!(updates.style_custom ?? "").trim())
@@ -305,10 +302,14 @@ export default function SectionPlanner({ projectId }: SectionPlannerProps) {
     ? "Sedang memproses prompt"
     : !project?.product_id || !currentProduct
       ? "Pilih produk terlebih dahulu"
+      : !project.tone
+        ? "Pilih tone terlebih dahulu"
+      : !project.platform
+        ? "Pilih platform terlebih dahulu"
         : sections.length === 0
           ? "Tambah minimal 1 section"
         : !canGenerate(project, sections, project.product_id)
-          ? "Lengkapi produk, judul, goals, dan layout semua section"
+          ? "Lengkapi judul, goals, layout, dan style custom semua section"
           : "";
   const canGeneratePrompt = generateDisabledReason === "";
 
