@@ -8,7 +8,9 @@ export default function CodePane() {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewRef = useRef<any>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const htmlRef = useRef(html);
+  const initialHtmlRef = useRef(html);
   const draftRef = useRef(html);
 
   // Keep refs in sync for closure use
@@ -17,6 +19,7 @@ export default function CodePane() {
   useEffect(() => {
     if (!containerRef.current) return;
     let destroyed = false;
+    const initialHtml = initialHtmlRef.current;
 
     async function init() {
       const [{ EditorView, basicSetup }, { html: htmlLang }, { oneDark }] = await Promise.all([
@@ -44,6 +47,10 @@ export default function CodePane() {
           EditorView.updateListener.of((update: any) => {
             if (update.docChanged) {
               draftRef.current = update.state.doc.toString();
+              if (debounceRef.current) clearTimeout(debounceRef.current);
+              debounceRef.current = setTimeout(() => {
+                setHtml(draftRef.current, false);
+              }, 300);
             }
           }),
           EditorView.theme({
@@ -63,7 +70,8 @@ export default function CodePane() {
 
     return () => {
       destroyed = true;
-      if (draftRef.current !== htmlRef.current) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (draftRef.current !== initialHtml) {
         setHtml(draftRef.current);
       }
       if (viewRef.current) {
