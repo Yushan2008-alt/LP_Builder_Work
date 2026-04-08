@@ -18,7 +18,6 @@ interface SectionCardProps {
     section_title?: string;
     section_goals?: string;
     layout_format?: string;
-    product_id?: string;
     style_custom?: string;
   };
 }
@@ -176,7 +175,7 @@ export default function SectionCard({
 
       {/* Goals preview (collapsed state) */}
       {!isExpanded && section.section_goals && (
-        <div className="px-3 py-2 text-xs text-gray-500 line-clamp-1 border-b border-gray-100">
+        <div className="px-3 py-2 text-xs leading-relaxed text-gray-500 line-clamp-2 border-b border-gray-100">
           {section.section_goals}
         </div>
       )}

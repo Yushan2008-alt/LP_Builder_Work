@@ -5,7 +5,6 @@ import { Section, UpdateSectionInput } from "@/lib/types";
 import { getLayoutById } from "@/lib/config/layouts";
 import FormatGalleryModal from "./FormatGalleryModal";
 import { cn } from "@/lib/utils";
-import { useBrandContext } from "@/contexts/BrandContext";
 
 interface SectionEditorProps {
   section: Section;
@@ -14,14 +13,12 @@ interface SectionEditorProps {
     section_title?: string;
     section_goals?: string;
     layout_format?: string;
-    product_id?: string;
     style_custom?: string;
   };
 }
 
 export default function SectionEditor({ section, onUpdate, validationErrors }: SectionEditorProps) {
   const [showFormatGallery, setShowFormatGallery] = useState(false);
-  const { products } = useBrandContext();
 
   const currentLayout = getLayoutById(section.layout_format);
 
@@ -82,29 +79,6 @@ export default function SectionEditor({ section, onUpdate, validationErrors }: S
         />
         {validationErrors?.section_goals && (
           <p className="mt-1 text-xs text-red-500">{validationErrors.section_goals}</p>
-        )}
-      </div>
-
-      {/* Product */}
-      <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">
-          Produk
-        </label>
-        <select
-          value={section.product_id ?? ""}
-          onChange={(e) => onUpdate(section.id, { product_id: e.target.value || null })}
-          className={cn(
-            "w-full px-3 py-2 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-            validationErrors?.product_id ? "border-red-300" : "border-gray-300"
-          )}
-        >
-          <option value="">-- Pilih Produk --</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>{product.name}</option>
-          ))}
-        </select>
-        {validationErrors?.product_id && (
-          <p className="mt-1 text-xs text-red-500">{validationErrors.product_id}</p>
         )}
       </div>
 
