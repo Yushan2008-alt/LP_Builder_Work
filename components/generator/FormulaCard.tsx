@@ -74,7 +74,7 @@ export function FormulaCard({ formula, onClick, isLoading, isPreselected, disabl
               <TierBadge tier={formula.tier} />
             </div>
           </div>
-          <p className="text-xs text-gray-600 mb-3 line-clamp-2">{formula.description}</p>
+          <p className="text-xs text-gray-600 mb-3 leading-relaxed">{formula.description}</p>
           <div className="flex flex-wrap gap-1">
             {formula.sections.slice(0, 4).map((s) => (
               <span key={s.frameworkPosition}
@@ -86,8 +86,8 @@ export function FormulaCard({ formula, onClick, isLoading, isPreselected, disabl
               <span className="text-xs text-gray-400 px-1">+{formula.sections.length - 4} lagi</span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-3 italic line-clamp-1">
-            💡 {formula.bestCase}
+          <p className="text-xs text-gray-500 mt-3 italic leading-relaxed">
+            💡 Terbaik untuk: {formula.bestCase}
           </p>
         </>
       )}
