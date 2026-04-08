@@ -16,7 +16,7 @@ export default function VisualEditor() {
   const {
     view, leftPanel,
     undo, redo,
-    duplicateElement, deleteElement,
+    duplicateElement,
     selectElement,
     setShowConfirmDelete,
     selectedPath,

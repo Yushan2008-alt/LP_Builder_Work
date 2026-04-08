@@ -6,6 +6,7 @@ import { useEditorStore } from "@/store/editor-store";
 export default function CodePane() {
   const { html, setHtml } = useEditorStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewRef = useRef<any>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const htmlRef = useRef(html);
@@ -35,9 +36,11 @@ export default function CodePane() {
       const startState = EditorState.create({
         doc: htmlRef.current,
         extensions: [
-          basicSetup as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        basicSetup as any,
           htmlLang(),
           oneDark,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           EditorView.updateListener.of((update: any) => {
             if (update.docChanged) {
               const val = update.state.doc.toString();

@@ -13,7 +13,7 @@ export default function RightSidebar() {
     html,
     selectElement,
     applyClassChange, applyTextChange, applyAttrChange, removeAttr,
-    deleteElement, duplicateElement, moveElement,
+    duplicateElement, moveElement,
     setShowConfirmDelete,
   } = useEditorStore();
 
