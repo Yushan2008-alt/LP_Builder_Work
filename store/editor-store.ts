@@ -89,10 +89,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // ---- setHtml: core mutation + history ----
   setHtml: (html: string, addHistory = true) => {
     set((state) => {
+      if (state.html === html) {
+        return state;
+      }
       if (addHistory) {
-        if (state.html === html) {
-          return {};
-        }
         return {
           html,
           ...pushHistory(state, html),

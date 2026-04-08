@@ -2,7 +2,13 @@
 
 import { useMemo } from "react";
 import { useEditorStore } from "@/store/editor-store";
-import { parseHtmlToTree, parseHtml, resolvePathToElement, getDirectText } from "@/lib/editor/html-utils";
+import {
+  parseHtmlToTree,
+  parseHtml,
+  resolvePathToElement,
+  getDirectText,
+  extractEditableAttributes,
+} from "@/lib/editor/html-utils";
 import TreeNode from "./TreeNode";
 
 export default function ElementTree() {
@@ -38,18 +44,12 @@ export default function ElementTree() {
                 selectElement(path);
                 return;
               }
-              const attrs: Record<string, string> = {};
-              Array.from(el.attributes).forEach((attr) => {
-                if (!attr.name.startsWith("data-editor-") && attr.name !== "class") {
-                  attrs[attr.name] = attr.value;
-                }
-              });
               selectElement(
                 path,
                 el.tagName.toLowerCase(),
                 Array.from(el.classList),
                 getDirectText(el),
-                attrs
+                extractEditableAttributes(el)
               );
             }}
             depth={0}

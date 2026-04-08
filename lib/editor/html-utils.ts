@@ -164,6 +164,21 @@ export function getDirectText(el: Element): string {
     .join("");
 }
 
+const NON_EDITABLE_ATTR_PREFIXES = ["data-editor-"] as const;
+const NON_EDITABLE_ATTR_NAMES = new Set(["class"]);
+
+export function extractEditableAttributes(el: Element): Record<string, string> {
+  const attrs: Record<string, string> = {};
+  Array.from(el.attributes).forEach((attr) => {
+    const isBlockedPrefix = NON_EDITABLE_ATTR_PREFIXES.some((prefix) => attr.name.startsWith(prefix));
+    const isBlockedName = NON_EDITABLE_ATTR_NAMES.has(attr.name);
+    if (!isBlockedPrefix && !isBlockedName) {
+      attrs[attr.name] = attr.value;
+    }
+  });
+  return attrs;
+}
+
 /**
  * Check if element has a previous or next element sibling.
  */
