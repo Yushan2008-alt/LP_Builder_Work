@@ -1,10 +1,10 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import HtmlEditor from "@/components/editor/HtmlEditor";
+import VisualEditor from "@/components/visual-editor/VisualEditor";
 
 export default function EditorPage() {
   return (
     <AppLayout fullHeight>
-      <HtmlEditor />
+      <VisualEditor />
     </AppLayout>
   );
 }

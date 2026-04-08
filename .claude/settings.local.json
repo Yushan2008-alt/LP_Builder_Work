@@ -10,7 +10,13 @@
       "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/components/auth\")",
       "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/components/layout\")",
       "Bash(mkdir -p \"C:/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project/app/login\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(BASE=\"/c/Users/CANDRA DEWI/Desktop/.vscode/Work Apps Project/First Work Project\")",
+      "Bash(mkdir -p \"$BASE/components/products\" \"$BASE/components/generator\" \"$BASE/components/saved\" \"$BASE/components/editor\" \"$BASE/app/products\" \"$BASE/app/generator/new\" \"$BASE/app/generator/[projectId]\" \"$BASE/app/saved\" \"$BASE/app/editor\")",
+      "Bash(node -e \"require\\('zustand'\\); console.log\\('zustand ok'\\)\")",
+      "Bash(node -e \"require\\('@uiw/react-codemirror'\\); console.log\\('codemirror ok'\\)\")",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
