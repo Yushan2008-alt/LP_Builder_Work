@@ -3,6 +3,7 @@
 import { useEditorStore } from "@/store/editor-store";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { cleanHtmlForExport } from "@/lib/editor/html-utils";
 
 export default function Toolbar() {
   const {
@@ -13,6 +14,8 @@ export default function Toolbar() {
     undo, redo,
     setShowPasteModal,
     copyCleanHtml,
+    html,
+    tailwindAutoInjected,
   } = useEditorStore();
 
   const canUndo = historyIndex > 0;
@@ -24,6 +27,22 @@ export default function Toolbar() {
       toast.success("HTML copied to clipboard!");
     } catch {
       toast.error("Failed to copy HTML");
+    }
+  }
+
+  function handleExport() {
+    try {
+      const clean = cleanHtmlForExport(html, tailwindAutoInjected);
+      const blob = new Blob([clean], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "lp-export.html";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("HTML exported!");
+    } catch {
+      toast.error("Failed to export HTML");
     }
   }
 
@@ -150,9 +169,16 @@ export default function Toolbar() {
       <button
         onClick={handleCopy}
         className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white text-xs rounded font-medium transition-colors"
-        title="Copy clean HTML to clipboard"
+        title="Copy clean HTML to clipboard (Ctrl+C)"
       >
         📤 Copy HTML
+      </button>
+      <button
+        onClick={handleExport}
+        className="px-3 py-1 bg-emerald-700 hover:bg-emerald-600 text-white text-xs rounded font-medium transition-colors"
+        title="Export clean HTML file"
+      >
+        💾 Export HTML
       </button>
     </div>
   );

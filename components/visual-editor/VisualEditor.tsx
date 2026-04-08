@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useEditorStore } from "@/store/editor-store";
 import Toolbar from "./Toolbar";
 import PreviewPane from "./PreviewPane";
@@ -14,45 +15,122 @@ import ConfirmModal from "./modals/ConfirmModal";
 
 export default function VisualEditor() {
   const {
-    view, leftPanel,
+    view, setView, setDevice, leftPanel,
     undo, redo,
     duplicateElement,
     selectElement,
     setShowConfirmDelete,
     selectedPath,
+    copyCleanHtml,
   } = useEditorStore();
 
   // Global keyboard shortcuts
   useEffect(() => {
+    async function handleCopyShortcut() {
+      try {
+        await copyCleanHtml();
+        toast.success("HTML copied to clipboard!");
+      } catch {
+        toast.error("Failed to copy HTML");
+      }
+    }
+
+    function shouldHandleCopyShortcut(opts: {
+      withMod: boolean;
+      key: string;
+      hasMainSelection: boolean;
+      hasIframeSelection: boolean;
+      isIframeFocused: boolean;
+    }) {
+      return (
+        opts.withMod &&
+        opts.key === "c" &&
+        !opts.hasMainSelection &&
+        !opts.hasIframeSelection &&
+        !opts.isIframeFocused
+      );
+    }
+
     function handleKeyDown(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      const targetEl = e.target as HTMLElement | null;
+      const tag = targetEl?.tagName?.toLowerCase();
       const isInput = tag === "input" || tag === "textarea" || tag === "select";
-      if (isInput) return;
+      const isContentEditable = !!targetEl?.isContentEditable;
+      const isCodeMirror = !!targetEl?.closest(".cm-editor");
+      if (isInput || isContentEditable || isCodeMirror) return;
+      const key = e.key.toLowerCase();
+      const withMod = e.ctrlKey || e.metaKey;
+      const isIframeFocused = document.activeElement?.tagName?.toLowerCase() === "iframe";
+      let hasIframeSelection = false;
+      if (isIframeFocused && document.activeElement instanceof HTMLIFrameElement) {
+        try {
+          hasIframeSelection = !!document.activeElement.contentWindow?.getSelection()?.toString();
+        } catch {
+          hasIframeSelection = false;
+        }
+      }
 
       if (e.key === "Escape") {
         selectElement(null);
       }
-      if (e.ctrlKey && !e.shiftKey && e.key === "z") {
+      if (withMod && key === "z") {
         e.preventDefault();
-        undo();
+        if (e.shiftKey) redo();
+        else undo();
       }
-      if (e.ctrlKey && e.shiftKey && e.key === "Z") {
-        e.preventDefault();
-        redo();
-      }
-      if (e.ctrlKey && e.key === "d" && selectedPath) {
+      if (withMod && key === "d" && selectedPath) {
         e.preventDefault();
         duplicateElement();
       }
+      if (
+        shouldHandleCopyShortcut({
+          withMod,
+          key,
+          hasMainSelection: !!window.getSelection()?.toString(),
+          hasIframeSelection,
+          isIframeFocused,
+        })
+      ) {
+        e.preventDefault();
+        void handleCopyShortcut();
+      }
+      if (withMod && key === "e") {
+        e.preventDefault();
+        setView(view === "preview" ? "code" : "preview");
+      }
+      if (withMod && key === "1") {
+        e.preventDefault();
+        setDevice("mobile");
+      }
+      if (withMod && key === "2") {
+        e.preventDefault();
+        setDevice("tablet");
+      }
+      if (withMod && key === "3") {
+        e.preventDefault();
+        setDevice("desktop");
+      }
       if ((e.key === "Delete" || e.key === "Backspace") && selectedPath) {
-        // Only if not in an input
+        e.preventDefault();
+        // Show delete confirmation for selected element
         setShowConfirmDelete(true);
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, duplicateElement, selectElement, setShowConfirmDelete, selectedPath]);
+  }, [
+    copyCleanHtml,
+    duplicateElement,
+    redo,
+    selectElement,
+    selectedPath,
+    setDevice,
+    setShowConfirmDelete,
+    setView,
+    undo,
+    view,
+  ]);
 
   return (
     <div className="flex flex-col h-full bg-gray-950">
