@@ -80,7 +80,8 @@ export default function CodePane() {
         viewRef.current = null;
       }
     };
-  }, [setHtml]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-gray-950">

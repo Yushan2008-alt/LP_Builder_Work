@@ -45,6 +45,14 @@ export default function VisualEditor() {
       const key = e.key.toLowerCase();
       const withMod = e.ctrlKey || e.metaKey;
       const isIframeFocused = document.activeElement?.tagName?.toLowerCase() === "iframe";
+      let hasIframeSelection = false;
+      if (isIframeFocused && document.activeElement instanceof HTMLIFrameElement) {
+        try {
+          hasIframeSelection = !!document.activeElement.contentWindow?.getSelection()?.toString();
+        } catch {
+          hasIframeSelection = false;
+        }
+      }
 
       if (e.key === "Escape") {
         selectElement(null);
@@ -58,7 +66,7 @@ export default function VisualEditor() {
         e.preventDefault();
         duplicateElement();
       }
-      if (withMod && key === "c" && !window.getSelection()?.toString() && !isIframeFocused) {
+      if (withMod && key === "c" && !window.getSelection()?.toString() && !hasIframeSelection && !isIframeFocused) {
         e.preventDefault();
         void handleCopyShortcut();
       }
