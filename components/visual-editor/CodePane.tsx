@@ -50,9 +50,8 @@ export default function CodePane() {
               draftRef.current = update.state.doc.toString();
               if (debounceRef.current) clearTimeout(debounceRef.current);
               debounceRef.current = setTimeout(() => {
-                const addHistory = false;
-                setHtml(draftRef.current, addHistory);
-              }, 300);
+                // Keep debounce behavior in code mode without mutating global store.
+              }, 200);
             }
           }),
           EditorView.theme({
@@ -74,7 +73,8 @@ export default function CodePane() {
       destroyed = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (dirtyRef.current && draftRef.current !== initialHtml) {
-        setHtml(draftRef.current);
+        const normalized = "<!DOCTYPE html>" + new DOMParser().parseFromString(draftRef.current, "text/html").documentElement.outerHTML;
+        setHtml(normalized);
       }
       if (viewRef.current) {
         viewRef.current.destroy();

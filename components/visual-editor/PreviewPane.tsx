@@ -29,8 +29,10 @@ export default function PreviewPane() {
   // Listen for postMessage from iframe
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
+      if (event.source !== iframeRef.current?.contentWindow) return;
       if (!event.data || event.data.type !== "element-selected") return;
       const { path, tag, classes, text, attrs } = event.data;
+      if (typeof path !== "string") return;
       selectElement(path, tag, classes, text, attrs);
       // Re-send selection back to iframe for visual feedback
       iframeRef.current?.contentWindow?.postMessage({ type: "select-element", path }, "*");
@@ -39,13 +41,25 @@ export default function PreviewPane() {
     return () => window.removeEventListener("message", handleMessage);
   }, [selectElement]);
 
+  useEffect(() => {
+    sendSelectionToIframe(selectedPath);
+  }, [selectedPath, sendSelectionToIframe]);
+
   // Re-send selection after iframe reloads
   const handleIframeLoad = useCallback(() => {
-    if (selectedPath) {
-      // Small delay to let bridge script initialize
-      setTimeout(() => sendSelectionToIframe(selectedPath), 100);
+    const iframeDoc = iframeRef.current?.contentDocument;
+    if (selectedPath && iframeDoc) {
+      const isPathValid = !!iframeDoc.querySelector(`[data-editor-path="${selectedPath}"]`);
+      if (!isPathValid) {
+        selectElement(null);
+        return;
+      }
     }
-  }, [selectedPath, sendSelectionToIframe]);
+    // Small delay to let bridge script initialize
+    setTimeout(() => {
+      sendSelectionToIframe(selectedPath);
+    }, 100);
+  }, [selectedPath, selectElement, sendSelectionToIframe]);
 
   const injectedHtml = html ? buildInjectedHtml(html, IFRAME_BRIDGE_SCRIPT) : "";
 

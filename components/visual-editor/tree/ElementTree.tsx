@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useEditorStore } from "@/store/editor-store";
-import { parseHtmlToTree } from "@/lib/editor/html-utils";
+import { parseHtmlToTree, parseHtml, resolvePathToElement, getDirectText } from "@/lib/editor/html-utils";
 import TreeNode from "./TreeNode";
 
 export default function ElementTree() {
@@ -32,9 +32,25 @@ export default function ElementTree() {
             node={tree}
             selectedPath={selectedPath}
             onSelect={(path) => {
-              // When clicking in tree, also need to get element data
-              // We pass the path and let PreviewPane sync
-              selectElement(path);
+              const doc = parseHtml(html);
+              const el = resolvePathToElement(doc, path);
+              if (!el) {
+                selectElement(path);
+                return;
+              }
+              const attrs: Record<string, string> = {};
+              Array.from(el.attributes).forEach((attr) => {
+                if (!attr.name.startsWith("data-editor-") && attr.name !== "class") {
+                  attrs[attr.name] = attr.value;
+                }
+              });
+              selectElement(
+                path,
+                el.tagName.toLowerCase(),
+                Array.from(el.classList),
+                getDirectText(el),
+                attrs
+              );
             }}
             depth={0}
           />
