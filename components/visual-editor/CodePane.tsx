@@ -50,7 +50,8 @@ export default function CodePane() {
               draftRef.current = update.state.doc.toString();
               if (debounceRef.current) clearTimeout(debounceRef.current);
               debounceRef.current = setTimeout(() => {
-                setHtml(draftRef.current, false);
+                const addHistory = false;
+                setHtml(draftRef.current, addHistory);
               }, 300);
             }
           }),

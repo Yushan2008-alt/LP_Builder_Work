@@ -35,6 +35,22 @@ export default function VisualEditor() {
       }
     }
 
+    function shouldHandleCopyShortcut(opts: {
+      withMod: boolean;
+      key: string;
+      hasMainSelection: boolean;
+      hasIframeSelection: boolean;
+      isIframeFocused: boolean;
+    }) {
+      return (
+        opts.withMod &&
+        opts.key === "c" &&
+        !opts.hasMainSelection &&
+        !opts.hasIframeSelection &&
+        !opts.isIframeFocused
+      );
+    }
+
     function handleKeyDown(e: KeyboardEvent) {
       const targetEl = e.target as HTMLElement | null;
       const tag = targetEl?.tagName?.toLowerCase();
@@ -66,7 +82,15 @@ export default function VisualEditor() {
         e.preventDefault();
         duplicateElement();
       }
-      if (withMod && key === "c" && !window.getSelection()?.toString() && !hasIframeSelection && !isIframeFocused) {
+      if (
+        shouldHandleCopyShortcut({
+          withMod,
+          key,
+          hasMainSelection: !!window.getSelection()?.toString(),
+          hasIframeSelection,
+          isIframeFocused,
+        })
+      ) {
         e.preventDefault();
         void handleCopyShortcut();
       }
@@ -88,7 +112,7 @@ export default function VisualEditor() {
       }
       if ((e.key === "Delete" || e.key === "Backspace") && selectedPath) {
         e.preventDefault();
-        // Only if not in an input
+        // Show delete confirmation for selected element
         setShowConfirmDelete(true);
       }
     }
