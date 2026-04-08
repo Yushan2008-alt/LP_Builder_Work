@@ -90,9 +90,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setHtml: (html: string, addHistory = true) => {
     set((state) => {
       if (addHistory) {
-        return { html, ...pushHistory(state, html) };
+        return {
+          html,
+          ...pushHistory(state, html),
+          selectedPath: null,
+          selectedTag: "",
+          selectedClasses: [],
+          selectedText: "",
+          selectedAttrs: {},
+        };
       }
-      return { html };
+      return {
+        html,
+        selectedPath: null,
+        selectedTag: "",
+        selectedClasses: [],
+        selectedText: "",
+        selectedAttrs: {},
+      };
     });
   },
 
@@ -284,7 +299,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { history, historyIndex } = get();
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
-      set({ historyIndex: newIndex, html: history[newIndex], selectedPath: null });
+      set({
+        historyIndex: newIndex,
+        html: history[newIndex],
+        selectedPath: null,
+        selectedTag: "",
+        selectedClasses: [],
+        selectedText: "",
+        selectedAttrs: {},
+      });
     }
   },
 
@@ -293,7 +316,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { history, historyIndex } = get();
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
-      set({ historyIndex: newIndex, html: history[newIndex], selectedPath: null });
+      set({
+        historyIndex: newIndex,
+        html: history[newIndex],
+        selectedPath: null,
+        selectedTag: "",
+        selectedClasses: [],
+        selectedText: "",
+        selectedAttrs: {},
+      });
     }
   },
 

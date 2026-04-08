@@ -94,8 +94,12 @@ export function cleanHtmlForExport(html: string, tailwindAutoInjected: boolean):
   const doc = parseHtml(html);
 
   // Remove all data-editor-* attributes
-  doc.querySelectorAll("[data-editor-path]").forEach((el) => {
-    el.removeAttribute("data-editor-path");
+  doc.querySelectorAll("*").forEach((el) => {
+    for (const attr of Array.from(el.attributes)) {
+      if (attr.name.startsWith("data-editor-")) {
+        el.removeAttribute(attr.name);
+      }
+    }
   });
 
   // Remove bridge script (contains 'element-selected')

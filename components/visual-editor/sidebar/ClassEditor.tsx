@@ -42,7 +42,26 @@ function ButtonGroup({
 function SpacingDropdown({
   prefix, label, classes, onChange,
 }: { prefix: string; label: string; classes: string[]; onChange: (c: string[]) => void }) {
-  const current = getCurrentInCategory(classes, `${prefix.replace("-", "")}`);
+  const categoryByPrefix: Record<string, string> = {
+    "p-": "padding-all",
+    "px-": "padding-x",
+    "py-": "padding-y",
+    "pt-": "padding-top",
+    "pr-": "padding-right",
+    "pb-": "padding-bottom",
+    "pl-": "padding-left",
+    "m-": "margin-all",
+    "mx-": "margin-x",
+    "my-": "margin-y",
+    "mt-": "margin-top",
+    "mr-": "margin-right",
+    "mb-": "margin-bottom",
+    "ml-": "margin-left",
+    "gap-": "gap-all",
+    "gap-x-": "gap-x",
+    "gap-y-": "gap-y",
+  };
+  const current = getCurrentInCategory(classes, categoryByPrefix[prefix] ?? "");
   const currentVal = current.replace(prefix, "") || "";
 
   return (

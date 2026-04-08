@@ -8,10 +8,10 @@ export default function CodePane() {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewRef = useRef<any>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const htmlRef = useRef(html);
+  const draftRef = useRef(html);
 
-  // Keep htmlRef in sync for closure use
+  // Keep refs in sync for closure use
   htmlRef.current = html;
 
   useEffect(() => {
@@ -43,11 +43,7 @@ export default function CodePane() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           EditorView.updateListener.of((update: any) => {
             if (update.docChanged) {
-              const val = update.state.doc.toString();
-              if (debounceRef.current) clearTimeout(debounceRef.current);
-              debounceRef.current = setTimeout(() => {
-                setHtml(val);
-              }, 300);
+              draftRef.current = update.state.doc.toString();
             }
           }),
           EditorView.theme({
@@ -67,14 +63,15 @@ export default function CodePane() {
 
     return () => {
       destroyed = true;
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (draftRef.current !== htmlRef.current) {
+        setHtml(draftRef.current);
+      }
       if (viewRef.current) {
         viewRef.current.destroy();
         viewRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setHtml]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-gray-950">
