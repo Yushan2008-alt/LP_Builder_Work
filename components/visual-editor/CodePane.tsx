@@ -10,7 +10,6 @@ export default function CodePane() {
   const viewRef = useRef<any>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const htmlRef = useRef(html);
-  const initialHtmlRef = useRef(html);
   const draftRef = useRef(html);
   const dirtyRef = useRef(false);
 
@@ -20,7 +19,7 @@ export default function CodePane() {
   useEffect(() => {
     if (!containerRef.current) return;
     let destroyed = false;
-    const initialHtml = initialHtmlRef.current;
+    const initialHtml = htmlRef.current;
 
     async function init() {
       const [{ EditorView, basicSetup }, { html: htmlLang }, { oneDark }] = await Promise.all([

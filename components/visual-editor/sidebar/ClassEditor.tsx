@@ -16,6 +16,26 @@ interface ClassEditorProps {
   onChange: (classes: string[]) => void;
 }
 
+const SPACING_CATEGORY_BY_PREFIX: Record<string, string> = {
+  "p-": "padding-all",
+  "px-": "padding-x",
+  "py-": "padding-y",
+  "pt-": "padding-top",
+  "pr-": "padding-right",
+  "pb-": "padding-bottom",
+  "pl-": "padding-left",
+  "m-": "margin-all",
+  "mx-": "margin-x",
+  "my-": "margin-y",
+  "mt-": "margin-top",
+  "mr-": "margin-right",
+  "mb-": "margin-bottom",
+  "ml-": "margin-left",
+  "gap-": "gap-all",
+  "gap-x-": "gap-x",
+  "gap-y-": "gap-y",
+};
+
 function ButtonGroup({
   options, current, onSelect,
 }: { options: string[]; current: string; onSelect: (val: string) => void }) {
@@ -42,26 +62,7 @@ function ButtonGroup({
 function SpacingDropdown({
   prefix, label, classes, onChange,
 }: { prefix: string; label: string; classes: string[]; onChange: (c: string[]) => void }) {
-  const categoryByPrefix: Record<string, string> = {
-    "p-": "padding-all",
-    "px-": "padding-x",
-    "py-": "padding-y",
-    "pt-": "padding-top",
-    "pr-": "padding-right",
-    "pb-": "padding-bottom",
-    "pl-": "padding-left",
-    "m-": "margin-all",
-    "mx-": "margin-x",
-    "my-": "margin-y",
-    "mt-": "margin-top",
-    "mr-": "margin-right",
-    "mb-": "margin-bottom",
-    "ml-": "margin-left",
-    "gap-": "gap-all",
-    "gap-x-": "gap-x",
-    "gap-y-": "gap-y",
-  };
-  const current = getCurrentInCategory(classes, categoryByPrefix[prefix] ?? "");
+  const current = getCurrentInCategory(classes, SPACING_CATEGORY_BY_PREFIX[prefix] ?? "");
   const currentVal = current.replace(prefix, "") || "";
 
   return (
