@@ -12,6 +12,7 @@ export default function CodePane() {
   const htmlRef = useRef(html);
   const initialHtmlRef = useRef(html);
   const draftRef = useRef(html);
+  const dirtyRef = useRef(false);
 
   // Keep refs in sync for closure use
   htmlRef.current = html;
@@ -46,6 +47,7 @@ export default function CodePane() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           EditorView.updateListener.of((update: any) => {
             if (update.docChanged) {
+              dirtyRef.current = true;
               draftRef.current = update.state.doc.toString();
               if (debounceRef.current) clearTimeout(debounceRef.current);
               debounceRef.current = setTimeout(() => {
@@ -71,7 +73,7 @@ export default function CodePane() {
     return () => {
       destroyed = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (draftRef.current !== initialHtml) {
+      if (dirtyRef.current && draftRef.current !== initialHtml) {
         setHtml(draftRef.current);
       }
       if (viewRef.current) {

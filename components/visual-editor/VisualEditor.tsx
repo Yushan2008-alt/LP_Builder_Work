@@ -36,11 +36,15 @@ export default function VisualEditor() {
     }
 
     function handleKeyDown(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      const targetEl = e.target as HTMLElement | null;
+      const tag = targetEl?.tagName?.toLowerCase();
       const isInput = tag === "input" || tag === "textarea" || tag === "select";
-      if (isInput) return;
+      const isContentEditable = !!targetEl?.isContentEditable;
+      const isCodeMirror = !!targetEl?.closest(".cm-editor");
+      if (isInput || isContentEditable || isCodeMirror) return;
       const key = e.key.toLowerCase();
       const withMod = e.ctrlKey || e.metaKey;
+      const isIframeFocused = document.activeElement?.tagName?.toLowerCase() === "iframe";
 
       if (e.key === "Escape") {
         selectElement(null);
@@ -54,7 +58,7 @@ export default function VisualEditor() {
         e.preventDefault();
         duplicateElement();
       }
-      if (withMod && key === "c" && !window.getSelection()?.toString()) {
+      if (withMod && key === "c" && !window.getSelection()?.toString() && !isIframeFocused) {
         e.preventDefault();
         void handleCopyShortcut();
       }
