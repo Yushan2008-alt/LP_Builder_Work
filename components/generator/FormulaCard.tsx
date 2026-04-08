@@ -87,7 +87,7 @@ export function FormulaCard({ formula, onClick, isLoading, isPreselected, disabl
             )}
           </div>
           <p className="text-xs text-gray-500 mt-3 italic leading-relaxed">
-            💡 Best untuk: {formula.bestCase}
+            💡 Terbaik untuk: {formula.bestCase}
           </p>
         </>
       )}
