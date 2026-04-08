@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import { useEditorStore } from "@/store/editor-store";
+import { parseHtml, serializeHtml } from "@/lib/editor/html-utils";
+
+const CODE_EDITOR_DEBOUNCE_MS = 200;
 
 export default function CodePane() {
   const { html, setHtml } = useEditorStore();
@@ -11,6 +14,7 @@ export default function CodePane() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const htmlRef = useRef(html);
   const draftRef = useRef(html);
+  const debouncedDraftRef = useRef(html);
   const dirtyRef = useRef(false);
 
   // Keep refs in sync for closure use
@@ -50,9 +54,8 @@ export default function CodePane() {
               draftRef.current = update.state.doc.toString();
               if (debounceRef.current) clearTimeout(debounceRef.current);
               debounceRef.current = setTimeout(() => {
-                const addHistory = false;
-                setHtml(draftRef.current, addHistory);
-              }, 300);
+                debouncedDraftRef.current = update.state.doc.toString();
+              }, CODE_EDITOR_DEBOUNCE_MS);
             }
           }),
           EditorView.theme({
@@ -74,7 +77,13 @@ export default function CodePane() {
       destroyed = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (dirtyRef.current && draftRef.current !== initialHtml) {
-        setHtml(draftRef.current);
+        const parsed = parseHtml(draftRef.current);
+        if (parsed.documentElement) {
+          const normalized = serializeHtml(parsed);
+          setHtml(normalized);
+        } else {
+          setHtml(draftRef.current);
+        }
       }
       if (viewRef.current) {
         viewRef.current.destroy();

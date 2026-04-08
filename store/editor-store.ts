@@ -89,6 +89,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // ---- setHtml: core mutation + history ----
   setHtml: (html: string, addHistory = true) => {
     set((state) => {
+      if (state.html === html) {
+        return state;
+      }
       if (addHistory) {
         return {
           html,
@@ -149,7 +152,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!el) return;
     el.className = classes.join(" ");
     const newHtml = serializeHtml(doc);
-    set({ html: newHtml, selectedClasses: classes, ...pushHistory({ history, historyIndex }, html) });
+    set({ html: newHtml, selectedClasses: classes, ...pushHistory({ history, historyIndex }, newHtml) });
   },
 
   // ---- applyTextChange ----
@@ -171,7 +174,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       el.insertBefore(doc.createTextNode(text), el.firstChild);
     }
     const newHtml = serializeHtml(doc);
-    set({ html: newHtml, selectedText: text, ...pushHistory({ history, historyIndex }, html) });
+    set({ html: newHtml, selectedText: text, ...pushHistory({ history, historyIndex }, newHtml) });
   },
 
   // ---- applyAttrChange ----
@@ -184,7 +187,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     el.setAttribute(name, value);
     const newHtml = serializeHtml(doc);
     const newAttrs = { ...selectedAttrs, [name]: value };
-    set({ html: newHtml, selectedAttrs: newAttrs, ...pushHistory({ history, historyIndex }, html) });
+    set({ html: newHtml, selectedAttrs: newAttrs, ...pushHistory({ history, historyIndex }, newHtml) });
   },
 
   // ---- removeAttr ----
@@ -198,7 +201,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const newHtml = serializeHtml(doc);
     const newAttrs = { ...selectedAttrs };
     delete newAttrs[name];
-    set({ html: newHtml, selectedAttrs: newAttrs, ...pushHistory({ history, historyIndex }, html) });
+    set({ html: newHtml, selectedAttrs: newAttrs, ...pushHistory({ history, historyIndex }, newHtml) });
   },
 
   // ---- deleteElement ----
@@ -218,7 +221,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedText: "",
       selectedAttrs: {},
       showConfirmDelete: false,
-      ...pushHistory({ history, historyIndex }, html),
+      ...pushHistory({ history, historyIndex }, newHtml),
     });
   },
 
@@ -236,7 +239,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const parts = selectedPath.split(">");
     const lastIndex = parseInt(parts[parts.length - 1], 10);
     const newPath = [...parts.slice(0, -1), lastIndex + 1].join(">");
-    set({ html: newHtml, selectedPath: newPath, ...pushHistory({ history, historyIndex }, html) });
+    set({ html: newHtml, selectedPath: newPath, ...pushHistory({ history, historyIndex }, newHtml) });
   },
 
   // ---- moveElement ----
@@ -260,7 +263,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const lastIndex = parseInt(parts[parts.length - 1], 10);
     const delta = direction === "up" ? -1 : 1;
     const newPath = [...parts.slice(0, -1), lastIndex + delta].join(">");
-    set({ html: newHtml, selectedPath: newPath, ...pushHistory({ history, historyIndex }, html) });
+    set({ html: newHtml, selectedPath: newPath, ...pushHistory({ history, historyIndex }, newHtml) });
   },
 
   // ---- addElement ----
@@ -291,7 +294,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
 
     const newHtml = serializeHtml(doc);
-    set({ html: newHtml, ...pushHistory({ history, historyIndex }, html) });
+    set({ html: newHtml, ...pushHistory({ history, historyIndex }, newHtml) });
   },
 
   // ---- undo ----
