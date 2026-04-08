@@ -48,7 +48,13 @@ export function FormulaGallery() {
       FORMULA_TIERS.map((tier) => ({
         ...tier,
         formulas: filtered.filter((formula) => formula.tier === tier.id),
-      })).filter((group) => group.formulas.length > 0),
+      }))
+        .filter((group) => group.formulas.length > 0)
+        .sort((a, b) => {
+          if (a.id === "custom") return -1;
+          if (b.id === "custom") return 1;
+          return 0;
+        }),
     [filtered]
   );
 
