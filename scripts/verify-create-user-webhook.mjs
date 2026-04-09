@@ -93,7 +93,6 @@ try {
 } catch {
   redirectPath = null;
 }
-
 const checks = [
   { name: "message", pass: typeof json?.message === "string" && json.message.length > 0 },
   { name: "user.id", pass: typeof json?.user?.id === "string" && json.user.id.length > 0 },
