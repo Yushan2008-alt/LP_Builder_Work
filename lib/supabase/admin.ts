@@ -14,10 +14,9 @@ export function getSupabaseAdmin() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
-    const missingVars = [
-      !supabaseUrl ? "NEXT_PUBLIC_SUPABASE_URL" : null,
-      !serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : null,
-    ].filter(Boolean);
+    const missingVars: string[] = [];
+    if (!supabaseUrl) missingVars.push("NEXT_PUBLIC_SUPABASE_URL");
+    if (!serviceRoleKey) missingVars.push("SUPABASE_SERVICE_ROLE_KEY");
 
     throw new Error(
       `Missing Supabase admin environment variables: ${missingVars.join(", ")}.`
