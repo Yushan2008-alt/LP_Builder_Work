@@ -136,7 +136,33 @@ export async function POST(request: NextRequest) {
     console.warn("[create-user] profiles upsert warning:", profileError.message);
   }
 
-  // 7. Success
+  // 7. Send magic link automatically for newly registered user
+  const callbackUrl = new URL("/auth/callback", request.url).toString();
+  const { error: magicLinkError } = await supabaseAdmin.auth.signInWithOtp({
+    email: trimmedEmail,
+    options: {
+      emailRedirectTo: callbackUrl,
+      shouldCreateUser: false,
+    },
+  });
+
+  if (magicLinkError) {
+    console.error("[create-user] signInWithOtp error:", magicLinkError.message);
+    return NextResponse.json(
+      {
+        error: "User created but failed to send magic link",
+        details: magicLinkError.message,
+        user: {
+          id: userId,
+          email: data.user.email,
+          created_at: data.user.created_at,
+        },
+      },
+      { status: 502 }
+    );
+  }
+
+  // 8. Success
   return NextResponse.json(
     {
       message: "User created successfully",
@@ -145,6 +171,8 @@ export async function POST(request: NextRequest) {
         email: data.user.email,
         created_at: data.user.created_at,
       },
+      magic_link_sent: true,
+      redirect_to: callbackUrl,
       user_limits_created: !limitsError,
       profile_created: !profileError,
     },
