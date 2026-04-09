@@ -19,10 +19,16 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingMagicLink, setIsSendingMagicLink] = useState(false);
+  const [magicLinkMessage, setMagicLinkMessage] = useState("");
   const [redirectAfterAuth, setRedirectAfterAuth] = useState("/products");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const authError = params.get("error");
+    if (authError) {
+      setError(authError);
+    }
     const candidate = params.get("next") ?? params.get("redirectedFrom");
     if (!candidate) {
       setRedirectAfterAuth("/products");
@@ -52,6 +58,40 @@ function LoginForm() {
       router.replace(redirectAfterAuth);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSendMagicLink = async () => {
+    setError("");
+    setMagicLinkMessage("");
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setError("Email wajib diisi untuk kirim magic link.");
+      return;
+    }
+
+    setIsSendingMagicLink(true);
+    try {
+      const response = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      const payload = (await response.json()) as { error?: string; message?: string };
+
+      if (!response.ok) {
+        setError(payload.error ?? "Gagal mengirim magic link.");
+        return;
+      }
+
+      setMagicLinkMessage(payload.message ?? "Magic link berhasil dikirim. Cek email kamu.");
+    } catch {
+      setError("Tidak bisa mengirim magic link saat ini.");
+    } finally {
+      setIsSendingMagicLink(false);
     }
   };
 
@@ -98,6 +138,21 @@ function LoginForm() {
             <Button type="submit" isLoading={isSubmitting} className="w-full" size="lg">
               Masuk
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              size="lg"
+              isLoading={isSendingMagicLink}
+              onClick={handleSendMagicLink}
+            >
+              Kirim Magic Link
+            </Button>
+            {magicLinkMessage && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
+                {magicLinkMessage}
+              </div>
+            )}
           </form>
         </div>
 
