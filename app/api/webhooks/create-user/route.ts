@@ -150,15 +150,16 @@ export async function POST(request: NextRequest) {
     console.error("[create-user] signInWithOtp error:", magicLinkError.message);
     return NextResponse.json(
       {
-        error: "User created but failed to send magic link",
+        error: "User created successfully, but magic link email failed to send",
         details: magicLinkError.message,
         user: {
           id: userId,
           email: data.user.email,
           created_at: data.user.created_at,
         },
+        magic_link_email_sent: false,
       },
-      { status: 502 }
+      { status: 500 }
     );
   }
 
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
         email: data.user.email,
         created_at: data.user.created_at,
       },
-      magic_link_sent: true,
+      magic_link_email_sent: true,
       redirect_to: callbackUrl,
       user_limits_created: !limitsError,
       profile_created: !profileError,
