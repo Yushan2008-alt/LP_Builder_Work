@@ -1,0 +1,34 @@
+name: lp-builder-work
+region: sgp
+services:
+  - name: web
+    github:
+      repo: Yushan2008-alt/LP_Builder_Work
+      branch: master
+      deploy_on_push: true
+    build_command: npm run build
+    run_command: npm run start
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+      - key: NEXT_PUBLIC_SITE_URL
+        value: ${APP_URL}
+        scope: RUN_AND_BUILD_TIME
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        scope: RUN_AND_BUILD_TIME
+        type: SECRET
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: WEBHOOK_SECRET
+        scope: RUN_TIME
+        type: SECRET

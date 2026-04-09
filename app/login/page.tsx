@@ -2,12 +2,31 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 function mapAuthError(message: string) {
   if (message === "Failed to fetch") {
     return "Tidak bisa terhubung ke server autentikasi. Cek koneksi internet atau konfigurasi Supabase.";
+  }
+  if (
+    message === "Signups not allowed for otp" ||
+    message.toLowerCase().includes("signups not allowed")
+  ) {
+    return "Email ini belum terdaftar. Hubungi admin untuk mendapatkan akses.";
+  }
+  if (
+    message === "Invalid login credentials" ||
+    message.toLowerCase().includes("invalid login")
+  ) {
+    return "Email atau password salah. Silakan coba lagi.";
+  }
+  if (message.toLowerCase().includes("email not confirmed")) {
+    return "Email belum dikonfirmasi. Cek inbox email kamu.";
+  }
+  if (message.toLowerCase().includes("too many requests")) {
+    return "Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.";
   }
   return message;
 }
@@ -73,21 +92,24 @@ function LoginForm() {
 
     setIsSendingMagicLink(true);
     try {
-      const response = await fetch("/api/auth/magic-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      // Must call from CLIENT-SIDE so Supabase can store the
+      // PKCE code verifier in browser cookies (not server-side).
+      const supabase = createClient();
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: normalizedEmail,
+        options: {
+          // Redirect to /auth/callback after clicking the link in email
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          shouldCreateUser: false, // only for existing users
         },
-        body: JSON.stringify({ email: normalizedEmail }),
       });
-      const payload = (await response.json()) as { error?: string; message?: string };
 
-      if (!response.ok) {
-        setError(payload.error ?? "Gagal mengirim magic link.");
+      if (otpError) {
+        setError(mapAuthError(otpError.message));
         return;
       }
 
-      setMagicLinkMessage(payload.message ?? "Magic link berhasil dikirim. Cek email kamu.");
+      setMagicLinkMessage("✅ Magic link berhasil dikirim! Cek inbox email kamu.");
     } catch {
       setError("Tidak bisa mengirim magic link saat ini.");
     } finally {
