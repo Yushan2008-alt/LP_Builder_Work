@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const ALLOWED_OTP_TYPES = new Set(["signup", "recovery", "invite", "email", "email_change"]);
+const ALLOWED_OTP_TYPES = new Set([
+  "signup",
+  "recovery",
+  "invite",
+  "magiclink",
+  "email",
+  "email_change",
+]);
 
 function encodeError(message: string) {
   return encodeURIComponent(message);
@@ -30,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { error } = await supabase.auth.verifyOtp({
-      type: type as "signup" | "recovery" | "invite" | "email" | "email_change",
+      type: type as "signup" | "recovery" | "invite" | "magiclink" | "email" | "email_change",
       token_hash: tokenHash,
     });
 

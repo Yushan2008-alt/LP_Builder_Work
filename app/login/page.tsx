@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -73,21 +74,24 @@ function LoginForm() {
 
     setIsSendingMagicLink(true);
     try {
-      const response = await fetch("/api/auth/magic-link", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      // Must call from CLIENT-SIDE so Supabase can store the
+      // PKCE code verifier in browser cookies (not server-side).
+      const supabase = createClient();
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: normalizedEmail,
+        options: {
+          // Redirect to /auth/callback after clicking the link in email
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          shouldCreateUser: false, // only for existing users
         },
-        body: JSON.stringify({ email: normalizedEmail }),
       });
-      const payload = (await response.json()) as { error?: string; message?: string };
 
-      if (!response.ok) {
-        setError(payload.error ?? "Gagal mengirim magic link.");
+      if (otpError) {
+        setError(otpError.message);
         return;
       }
 
-      setMagicLinkMessage(payload.message ?? "Magic link berhasil dikirim. Cek email kamu.");
+      setMagicLinkMessage("✅ Magic link berhasil dikirim! Cek inbox email kamu.");
     } catch {
       setError("Tidak bisa mengirim magic link saat ini.");
     } finally {

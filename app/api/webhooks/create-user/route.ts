@@ -135,19 +135,26 @@ export async function POST(request: NextRequest) {
     console.warn("[create-user] profiles upsert warning:", profileError.message);
   }
 
-  // 8. Generate magic link pointing to correct environment URL
-  const redirectTo = `${getSiteUrl()}/auth/callback`;
+  // 8. Generate magic link — use token_hash URL to bypass PKCE (cross-device safe)
+  const siteUrl = getSiteUrl();
 
   const { data: linkData, error: linkError } =
     await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
       email: trimmedEmail,
-      options: { redirectTo },
+      options: { redirectTo: `${siteUrl}/auth/callback` },
     });
 
   if (linkError) {
     console.warn("[create-user] generateLink warning:", linkError.message);
   }
+
+  // Build token_hash URL — does NOT require PKCE verifier in browser storage.
+  // Embed this URL in your branded email instead of the raw action_link.
+  const hashedToken = linkData?.properties?.hashed_token ?? null;
+  const magicLinkUrl = hashedToken
+    ? `${siteUrl}/auth/callback?token_hash=${hashedToken}&type=magiclink`
+    : null;
 
   // 9. Success
   return NextResponse.json(
@@ -160,9 +167,9 @@ export async function POST(request: NextRequest) {
       },
       user_limits_created: !limitsError,
       profile_created: !profileError,
-      // magic_link: embed this in your branded email (expires per Supabase OTP setting)
-      magic_link: linkData?.properties?.action_link ?? null,
-      redirect_to: redirectTo,
+      // Embed magic_link_url in your branded email. Works cross-device, no PKCE needed.
+      // Expires per Supabase project OTP expiry setting (default: 1 hour).
+      magic_link_url: magicLinkUrl,
     },
     { status: 201 }
   );
