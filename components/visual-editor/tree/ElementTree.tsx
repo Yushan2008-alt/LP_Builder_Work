@@ -1,14 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useEditorStore } from "@/store/editor-store";
-import {
-  parseHtmlToTree,
-  parseHtml,
-  resolvePathToElement,
-  getDirectText,
-  extractEditableAttributes,
-} from "@/lib/editor/html-utils";
+import { parseHtmlToTree, parseHtml, resolvePathToElement, getDirectText } from "@/lib/editor/html-utils";
 import TreeNode from "./TreeNode";
 
 export default function ElementTree() {
@@ -18,6 +12,27 @@ export default function ElementTree() {
     if (!html) return null;
     return parseHtmlToTree(html);
   }, [html]);
+
+  // When clicking a tree node, resolve the element to get tag/classes/text/attrs
+  const handleSelect = useCallback((path: string) => {
+    if (!html) return;
+    const doc = parseHtml(html);
+    const el = resolvePathToElement(doc, path);
+    if (!el) {
+      selectElement(path);
+      return;
+    }
+    const tag = el.tagName.toLowerCase();
+    const classes = Array.from(el.classList);
+    const text = getDirectText(el);
+    const attrs: Record<string, string> = {};
+    for (const attr of Array.from(el.attributes)) {
+      if (attr.name !== "class" && !attr.name.startsWith("data-editor-")) {
+        attrs[attr.name] = attr.value;
+      }
+    }
+    selectElement(path, tag, classes, text, attrs);
+  }, [html, selectElement]);
 
   if (!html) {
     return (
@@ -37,21 +52,7 @@ export default function ElementTree() {
           <TreeNode
             node={tree}
             selectedPath={selectedPath}
-            onSelect={(path) => {
-              const doc = parseHtml(html);
-              const el = resolvePathToElement(doc, path);
-              if (!el) {
-                selectElement(path);
-                return;
-              }
-              selectElement(
-                path,
-                el.tagName.toLowerCase(),
-                Array.from(el.classList),
-                getDirectText(el),
-                extractEditableAttributes(el)
-              );
-            }}
+            onSelect={handleSelect}
             depth={0}
           />
         )}

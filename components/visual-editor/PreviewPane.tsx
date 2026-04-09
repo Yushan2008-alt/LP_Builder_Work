@@ -11,15 +11,6 @@ const DEVICE_WIDTHS = {
   desktop: "100%",
 };
 
-function getPostMessageTargetOrigin() {
-  if (typeof window === "undefined") return "*";
-  return window.location.origin;
-}
-
-function isValidEditorPath(path: string) {
-  return path === "" || /^\d+(>\d+)*$/.test(path);
-}
-
 export default function PreviewPane() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { html, device, selectedPath, selectElement } = useEditorStore();
@@ -28,56 +19,38 @@ export default function PreviewPane() {
   const sendSelectionToIframe = useCallback((path: string | null) => {
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow) return;
-    const targetOrigin = getPostMessageTargetOrigin();
     if (path) {
-      iframe.contentWindow.postMessage({ type: "select-element", path }, targetOrigin);
+      iframe.contentWindow.postMessage({ type: "select-element", path }, "*");
     } else {
-      iframe.contentWindow.postMessage({ type: "deselect-element" }, targetOrigin);
+      iframe.contentWindow.postMessage({ type: "deselect-element" }, "*");
     }
   }, []);
 
   // Listen for postMessage from iframe
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
-      const iframeWindow = iframeRef.current?.contentWindow;
-      if (!iframeWindow || event.source !== iframeWindow) return;
       if (!event.data || event.data.type !== "element-selected") return;
       const { path, tag, classes, text, attrs } = event.data;
-      if (typeof path !== "string") return;
       selectElement(path, tag, classes, text, attrs);
       // Re-send selection back to iframe for visual feedback
-      iframeRef.current?.contentWindow?.postMessage(
-        { type: "select-element", path },
-        getPostMessageTargetOrigin()
-      );
+      iframeRef.current?.contentWindow?.postMessage({ type: "select-element", path }, "*");
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [selectElement]);
 
+  // Sync selection to iframe when selectedPath changes (e.g., from tree click)
   useEffect(() => {
     sendSelectionToIframe(selectedPath);
   }, [selectedPath, sendSelectionToIframe]);
 
   // Re-send selection after iframe reloads
   const handleIframeLoad = useCallback(() => {
-    const iframeDoc = iframeRef.current?.contentDocument;
-    if (selectedPath && iframeDoc) {
-      if (!isValidEditorPath(selectedPath)) {
-        selectElement(null);
-        return;
-      }
-      const isPathValid = !!iframeDoc.querySelector(`[data-editor-path="${selectedPath}"]`);
-      if (!isPathValid) {
-        selectElement(null);
-        return;
-      }
+    if (selectedPath) {
+      // Small delay to let bridge script initialize
+      setTimeout(() => sendSelectionToIframe(selectedPath), 100);
     }
-    // Small delay to let bridge script initialize
-    setTimeout(() => {
-      sendSelectionToIframe(selectedPath);
-    }, 100);
-  }, [selectedPath, selectElement, sendSelectionToIframe]);
+  }, [selectedPath, sendSelectionToIframe]);
 
   const injectedHtml = html ? buildInjectedHtml(html, IFRAME_BRIDGE_SCRIPT) : "";
 

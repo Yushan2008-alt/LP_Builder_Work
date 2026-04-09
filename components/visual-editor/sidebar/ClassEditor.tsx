@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   replaceClass, getCurrentInCategory,
   FONT_SIZES, FONT_WEIGHTS, TEXT_ALIGNS,
@@ -11,12 +11,8 @@ import {
 import ColorPicker from "./ColorPicker";
 import { cn } from "@/lib/utils";
 
-interface ClassEditorProps {
-  classes: string[];
-  onChange: (classes: string[]) => void;
-}
-
-const SPACING_CATEGORY_BY_PREFIX: Record<string, string> = {
+// Map prefix to CATEGORY_PATTERNS key
+const PREFIX_TO_CATEGORY: Record<string, string> = {
   "p-": "padding-all",
   "px-": "padding-x",
   "py-": "padding-y",
@@ -35,6 +31,11 @@ const SPACING_CATEGORY_BY_PREFIX: Record<string, string> = {
   "gap-x-": "gap-x",
   "gap-y-": "gap-y",
 };
+
+interface ClassEditorProps {
+  classes: string[];
+  onChange: (classes: string[]) => void;
+}
 
 function ButtonGroup({
   options, current, onSelect,
@@ -62,7 +63,8 @@ function ButtonGroup({
 function SpacingDropdown({
   prefix, label, classes, onChange,
 }: { prefix: string; label: string; classes: string[]; onChange: (c: string[]) => void }) {
-  const current = getCurrentInCategory(classes, SPACING_CATEGORY_BY_PREFIX[prefix] ?? "");
+  const category = PREFIX_TO_CATEGORY[prefix] ?? prefix.replace("-", "");
+  const current = getCurrentInCategory(classes, category);
   const currentVal = current.replace(prefix, "") || "";
 
   return (
@@ -93,6 +95,11 @@ function SpacingDropdown({
 export default function ClassEditor({ classes, onChange }: ClassEditorProps) {
   const [mode, setMode] = useState<"raw" | "visual">("visual");
   const [rawValue, setRawValue] = useState(classes.join(" "));
+
+  // Sync rawValue when classes change (e.g., different element selected)
+  useEffect(() => {
+    setRawValue(classes.join(" "));
+  }, [classes]);
 
   function handleRawBlur() {
     const newClasses = rawValue.split(/\s+/).filter(Boolean);

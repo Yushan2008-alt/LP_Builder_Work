@@ -20,6 +20,18 @@ export default function CodePane() {
   // Keep refs in sync for closure use
   htmlRef.current = html;
 
+  // Sync CodeMirror when html changes externally (undo/redo/sidebar edits)
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    const currentDoc = view.state.doc.toString();
+    if (currentDoc !== html) {
+      view.dispatch({
+        changes: { from: 0, to: currentDoc.length, insert: html },
+      });
+    }
+  }, [html]);
+
   useEffect(() => {
     if (!containerRef.current) return;
     let destroyed = false;
