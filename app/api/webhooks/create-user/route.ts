@@ -104,7 +104,8 @@ export async function POST(request: NextRequest) {
   const userId = data.user.id;
 
   // 6. Upsert user_limits (fallback jika trigger tidak aktif)
-  const { error: limitsError } = await supabaseAdmin
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: limitsError } = await (supabaseAdmin as any)
     .from("user_limits")
     .upsert(
       {
