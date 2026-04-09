@@ -111,11 +111,8 @@ export async function POST(request: NextRequest) {
 
   const userId = data.user.id;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const adminAny = supabaseAdmin as any;
-
   // 6. Upsert user_limits (fallback if trigger is not active)
-  const { error: limitsError } = await adminAny
+  const { error: limitsError } = await supabaseAdmin
     .from("user_limits")
     .upsert(
       { user_id: userId, max_brands: 3, max_products: 10, max_projects: 4, tier: "free" },
@@ -127,7 +124,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 7. Upsert profiles baseline row
-  const { error: profileError } = await adminAny
+  const { error: profileError } = await supabaseAdmin
     .from("profiles")
     .upsert({ user_id: userId }, { onConflict: "user_id" });
 
@@ -138,11 +135,11 @@ export async function POST(request: NextRequest) {
   // 8. Automatically send magic link email via Supabase (no manual send needed)
   const siteUrl = getSiteUrl();
   const callbackUrl = `${siteUrl}/auth/callback`;
-
   const { error: magicLinkError } = await supabaseAdmin.auth.signInWithOtp({
     email: trimmedEmail,
     options: {
       emailRedirectTo: callbackUrl,
+      shouldCreateUser: false,
     },
   });
 
@@ -156,6 +153,7 @@ export async function POST(request: NextRequest) {
           email: data.user.email,
           created_at: data.user.created_at,
         },
+        magic_link_email_sent: false,
       },
       { status: 500 }
     );
@@ -170,10 +168,10 @@ export async function POST(request: NextRequest) {
         email: data.user.email,
         created_at: data.user.created_at,
       },
+      magic_link_email_sent: true,
+      redirect_to: callbackUrl,
       user_limits_created: !limitsError,
       profile_created: !profileError,
-      magic_link_email_sent: !magicLinkError,
-      redirect_to: callbackUrl,
     },
     { status: 201 }
   );

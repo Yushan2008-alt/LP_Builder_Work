@@ -45,14 +45,16 @@ loadEnvLocalIfNeeded();
 
 const webhookSecret = process.env.WEBHOOK_SECRET;
 const baseUrl = (process.env.WEBHOOK_BASE_URL ||
+  process.env.VERIFY_BASE_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
   "http://localhost:3000").replace(/\/$/, "");
+const emailDomain = process.env.VERIFY_EMAIL_DOMAIN || "example.com";
 
 if (!webhookSecret) {
   fail("WEBHOOK_SECRET belum tersedia (set di env atau .env.local).");
 }
 
-const testEmail = `e2e.magic.${Date.now()}@gmail.com`;
+const testEmail = `verify.${Date.now()}@${emailDomain}`;
 const endpoint = `${baseUrl}/api/webhooks/create-user`;
 
 console.log(`➡️  Endpoint : ${endpoint}`);
@@ -85,6 +87,12 @@ if (response.status !== 201) {
   fail(`HTTP status tidak sukses. Expected 201, got ${response.status}.`, json);
 }
 
+let redirectPath = null;
+try {
+  redirectPath = typeof json?.redirect_to === "string" ? new URL(json.redirect_to).pathname : null;
+} catch {
+  redirectPath = null;
+}
 const checks = [
   { name: "message", pass: typeof json?.message === "string" && json.message.length > 0 },
   { name: "user.id", pass: typeof json?.user?.id === "string" && json.user.id.length > 0 },
@@ -100,9 +108,7 @@ const checks = [
   },
   {
     name: "redirect_to",
-    pass:
-      typeof json?.redirect_to === "string" &&
-      json.redirect_to.endsWith("/auth/callback"),
+    pass: typeof json?.redirect_to === "string" && redirectPath === "/auth/callback",
   },
 ];
 
