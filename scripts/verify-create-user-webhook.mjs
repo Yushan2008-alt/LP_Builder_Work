@@ -62,7 +62,7 @@ async function main() {
     process.exit(1);
   }
 
-  let redirectPath = "";
+  let redirectPath;
   try {
     redirectPath = new URL(payload.redirect_to).pathname;
   } catch {
