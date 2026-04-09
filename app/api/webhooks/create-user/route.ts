@@ -123,6 +123,23 @@ export async function POST(request: NextRequest) {
     console.warn("[create-user] user_limits upsert warning:", limitsError.message);
   }
 
+  // 6b. Upsert profiles baseline tier and password flag
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error: profileError } = await (supabaseAdmin as any)
+    .from("profiles")
+    .upsert(
+      {
+        user_id: userId,
+        tier: "baseline",
+        has_password: false,
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (profileError) {
+    console.warn("[create-user] profiles upsert warning:", profileError.message);
+  }
+
   // 7. Success
   return NextResponse.json(
     {
@@ -133,6 +150,7 @@ export async function POST(request: NextRequest) {
         created_at: data.user.created_at,
       },
       user_limits_created: !limitsError,
+      profile_created: !profileError,
     },
     { status: 201 }
   );
