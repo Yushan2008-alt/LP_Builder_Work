@@ -82,13 +82,12 @@ export async function POST(request: NextRequest) {
   const { data, error: createError } =
     await supabaseAdmin.auth.admin.createUser({
       email: trimmedEmail,
-      email_confirm: true, // auto-confirm the email
+      email_confirm: true,
     });
 
   if (createError) {
     console.error("[create-user] createUser error:", createError.message);
 
-    // Supabase sometimes returns a specific message for duplicates
     if (createError.message.toLowerCase().includes("already been registered")) {
       return NextResponse.json(
         { error: "Conflict: user with this email already exists" },
@@ -102,15 +101,37 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 6. Success
+  const userId = data.user.id;
+
+  // 6. Upsert user_limits (fallback jika trigger tidak aktif)
+  const { error: limitsError } = await supabaseAdmin
+    .from("user_limits")
+    .upsert(
+      {
+        user_id: userId,
+        max_brands: 3,
+        max_products: 10,
+        max_projects: 4,
+        tier: "free",
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (limitsError) {
+    // Log warning tapi jangan gagalkan response — user sudah terbuat
+    console.warn("[create-user] user_limits upsert warning:", limitsError.message);
+  }
+
+  // 7. Success
   return NextResponse.json(
     {
       message: "User created successfully",
       user: {
-        id: data.user.id,
+        id: userId,
         email: data.user.email,
         created_at: data.user.created_at,
       },
+      user_limits_created: !limitsError,
     },
     { status: 201 }
   );
