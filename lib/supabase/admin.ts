@@ -5,10 +5,10 @@ import { createClient } from "@supabase/supabase-js";
  * NEVER expose this on the client side.
  * Only use in server-side API routes / Server Actions.
  */
-let cachedSupabaseAdmin: ReturnType<typeof createClient> | null = null;
+let adminClient: ReturnType<typeof createClient> | null = null;
 
 export function getSupabaseAdmin() {
-  if (cachedSupabaseAdmin) return cachedSupabaseAdmin;
+  if (adminClient) return adminClient;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -23,12 +23,12 @@ export function getSupabaseAdmin() {
     );
   }
 
-  cachedSupabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+  adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   });
 
-  return cachedSupabaseAdmin;
+  return adminClient;
 }
