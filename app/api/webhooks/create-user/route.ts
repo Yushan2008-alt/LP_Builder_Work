@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -40,6 +40,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Bad Request: invalid email format" },
       { status: 400 }
+    );
+  }
+
+  let supabaseAdmin;
+  try {
+    supabaseAdmin = getSupabaseAdmin();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("[create-user] supabase admin init error:", errorMessage);
+    return NextResponse.json(
+      { error: "Internal Server Error: service temporarily unavailable" },
+      { status: 500 }
     );
   }
 
