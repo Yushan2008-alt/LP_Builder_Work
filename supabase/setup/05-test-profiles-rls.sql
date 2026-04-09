@@ -147,14 +147,16 @@ $$;
 -- ---------------------------------------------------------------------------
 -- 3) Service-role style update should be allowed for tier mutation
 -- ---------------------------------------------------------------------------
--- In SQL editor (postgres/service context), this should pass because trigger
--- allows tier change when auth.role() = service_role.
+-- Explicitly set request JWT role claim to service_role so auth.role() matches
+-- trigger expectation in any SQL editor/session context.
 
 DO $$
 DECLARE
   user_a UUID;
 BEGIN
   SELECT id INTO user_a FROM auth.users ORDER BY created_at ASC LIMIT 1;
+
+  PERFORM set_config('request.jwt.claim.role', 'service_role', true);
 
   UPDATE public.profiles
   SET tier = 'enterprise'
