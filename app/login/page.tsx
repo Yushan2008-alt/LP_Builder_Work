@@ -10,6 +10,24 @@ function mapAuthError(message: string) {
   if (message === "Failed to fetch") {
     return "Tidak bisa terhubung ke server autentikasi. Cek koneksi internet atau konfigurasi Supabase.";
   }
+  if (
+    message === "Signups not allowed for otp" ||
+    message.toLowerCase().includes("signups not allowed")
+  ) {
+    return "Email ini belum terdaftar. Hubungi admin untuk mendapatkan akses.";
+  }
+  if (
+    message === "Invalid login credentials" ||
+    message.toLowerCase().includes("invalid login")
+  ) {
+    return "Email atau password salah. Silakan coba lagi.";
+  }
+  if (message.toLowerCase().includes("email not confirmed")) {
+    return "Email belum dikonfirmasi. Cek inbox email kamu.";
+  }
+  if (message.toLowerCase().includes("too many requests")) {
+    return "Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.";
+  }
   return message;
 }
 
@@ -87,7 +105,7 @@ function LoginForm() {
       });
 
       if (otpError) {
-        setError(otpError.message);
+        setError(mapAuthError(otpError.message));
         return;
       }
 
