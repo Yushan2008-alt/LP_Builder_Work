@@ -50,19 +50,16 @@ export async function GET(request: NextRequest) {
     return redirectToLogin(request, userError?.message ?? "Gagal mendapatkan user.");
   }
 
+  // Upsert profiles — ensure row exists for this user
   const { error: profileUpsertError } = await supabase
     .from("profiles")
-    .upsert(
-      {
-        user_id: user.id,
-      },
-      { onConflict: "user_id" }
-    );
+    .upsert({ user_id: user.id }, { onConflict: "user_id" });
 
   if (profileUpsertError) {
     return redirectToLogin(request, "Gagal menyiapkan profil user.");
   }
 
+  // Read has_password flag to decide where to redirect
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("has_password")
@@ -73,6 +70,7 @@ export async function GET(request: NextRequest) {
     return redirectToLogin(request, "Gagal membaca status password user.");
   }
 
-  const destination = profile?.has_password ? "/dashboard" : "/settings/set-password";
+  // Users without a password → set password first; otherwise → dashboard
+  const destination = profile?.has_password ? "/products" : "/settings/set-password";
   return NextResponse.redirect(new URL(destination, request.url));
 }
