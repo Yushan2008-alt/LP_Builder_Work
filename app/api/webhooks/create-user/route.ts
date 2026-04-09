@@ -47,8 +47,7 @@ export async function POST(request: NextRequest) {
   try {
     supabaseAdmin = getSupabaseAdmin();
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[create-user] supabase admin init error:", message);
+    console.error("[create-user] supabase admin init error:", error);
     return NextResponse.json(
       { error: "Internal Server Error: service temporarily unavailable" },
       { status: 500 }

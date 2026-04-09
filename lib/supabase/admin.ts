@@ -19,7 +19,7 @@ export function getSupabaseAdmin() {
     if (!serviceRoleKey) missingVars.push("SUPABASE_SERVICE_ROLE_KEY");
 
     throw new Error(
-      `Missing Supabase admin environment variables: ${missingVars.join(", ")}.`
+      `Missing Supabase admin environment variables: ${missingVars.join(", ")}`
     );
   }
 
