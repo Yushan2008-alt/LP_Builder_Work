@@ -35,7 +35,10 @@ RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = NOW();
 
-  IF OLD.tier IS DISTINCT FROM NEW.tier AND auth.role() <> 'service_role' THEN
+  IF TG_OP = 'UPDATE'
+    AND OLD IS NOT NULL
+    AND OLD.tier IS DISTINCT FROM NEW.tier
+    AND auth.role() <> 'service_role' THEN
     RAISE EXCEPTION 'tier cannot be changed by non-service role';
   END IF;
 
@@ -66,6 +69,7 @@ FOR EACH ROW
 EXECUTE FUNCTION public.auto_create_profile_baseline();
 
 INSERT INTO public.profiles (user_id, has_password, tier)
+-- Backfill profile baseline for users created before this setup script exists.
 SELECT id, FALSE, 'baseline'
 FROM auth.users
 ON CONFLICT (user_id) DO NOTHING;

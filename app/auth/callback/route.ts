@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+const ALLOWED_OTP_TYPES = new Set(["signup", "recovery", "invite", "email", "email_change"]);
+
 function encodeError(message: string) {
   return encodeURIComponent(message);
 }
@@ -23,6 +25,10 @@ export async function GET(request: NextRequest) {
       return redirectToLogin(request, error.message);
     }
   } else if (tokenHash && type) {
+    if (!ALLOWED_OTP_TYPES.has(type)) {
+      return redirectToLogin(request, "Tipe OTP tidak valid.");
+    }
+
     const { error } = await supabase.auth.verifyOtp({
       type: type as "signup" | "recovery" | "invite" | "email" | "email_change",
       token_hash: tokenHash,
@@ -49,7 +55,6 @@ export async function GET(request: NextRequest) {
     .upsert(
       {
         user_id: user.id,
-        tier: "baseline",
       },
       { onConflict: "user_id" }
     );

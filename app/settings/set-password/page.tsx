@@ -39,7 +39,6 @@ async function setInitialPasswordAction(formData: FormData) {
       {
         user_id: user.id,
         has_password: true,
-        tier: "baseline",
       },
       { onConflict: "user_id" }
     );

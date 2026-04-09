@@ -104,8 +104,7 @@ export async function POST(request: NextRequest) {
   const userId = data.user.id;
 
   // 6. Upsert user_limits (fallback jika trigger tidak aktif)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: limitsError } = await (supabaseAdmin as any)
+  const { error: limitsError } = await supabaseAdmin
     .from("user_limits")
     .upsert(
       {
@@ -124,14 +123,11 @@ export async function POST(request: NextRequest) {
   }
 
   // 6b. Upsert profiles baseline tier and password flag
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error: profileError } = await (supabaseAdmin as any)
+  const { error: profileError } = await supabaseAdmin
     .from("profiles")
     .upsert(
       {
         user_id: userId,
-        tier: "baseline",
-        has_password: false,
       },
       { onConflict: "user_id" }
     );
