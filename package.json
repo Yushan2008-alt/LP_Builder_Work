@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "verify:webhook:create-user": "node ./scripts/verify-create-user-webhook.mjs"
   },
   "dependencies": {
     "@codemirror/lang-html": "^6.4.11",
