@@ -135,31 +135,36 @@ export async function POST(request: NextRequest) {
     console.warn("[create-user] profiles upsert warning:", profileError.message);
   }
 
-  // 8. Generate magic link — use token_hash URL to bypass PKCE (cross-device safe)
+  // 8. Automatically send magic link email via Supabase (no manual send needed)
   const siteUrl = getSiteUrl();
+  const callbackUrl = `${siteUrl}/auth/callback`;
 
-  const { data: linkData, error: linkError } =
-    await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email: trimmedEmail,
-      options: { redirectTo: `${siteUrl}/auth/callback` },
-    });
+  const { error: magicLinkError } = await supabaseAdmin.auth.signInWithOtp({
+    email: trimmedEmail,
+    options: {
+      emailRedirectTo: callbackUrl,
+    },
+  });
 
-  if (linkError) {
-    console.warn("[create-user] generateLink warning:", linkError.message);
+  if (magicLinkError) {
+    console.error("[create-user] send magic link error:", magicLinkError.message);
+    return NextResponse.json(
+      {
+        error: "User created, but failed to send magic link email",
+        user: {
+          id: userId,
+          email: data.user.email,
+          created_at: data.user.created_at,
+        },
+      },
+      { status: 500 }
+    );
   }
-
-  // Build token_hash URL — does NOT require PKCE verifier in browser storage.
-  // Embed this URL in your branded email instead of the raw action_link.
-  const hashedToken = linkData?.properties?.hashed_token ?? null;
-  const magicLinkUrl = hashedToken
-    ? `${siteUrl}/auth/callback?token_hash=${hashedToken}&type=magiclink`
-    : null;
 
   // 9. Success
   return NextResponse.json(
     {
-      message: "User created successfully",
+      message: "User created and magic link sent successfully",
       user: {
         id: userId,
         email: data.user.email,
@@ -167,9 +172,8 @@ export async function POST(request: NextRequest) {
       },
       user_limits_created: !limitsError,
       profile_created: !profileError,
-      // Embed magic_link_url in your branded email. Works cross-device, no PKCE needed.
-      // Expires per Supabase project OTP expiry setting (default: 1 hour).
-      magic_link_url: magicLinkUrl,
+      magic_link_email_sent: !magicLinkError,
+      redirect_to: callbackUrl,
     },
     { status: 201 }
   );

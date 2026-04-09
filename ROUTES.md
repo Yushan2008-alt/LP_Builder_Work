@@ -567,6 +567,18 @@ Result: After login, redirect to `/generator/new?framework=pastor` (requires rou
 
 ## 10. Testing Routes
 
+### Webhook E2E Quick Check (create-user)
+
+Jalankan satu command berikut untuk verifikasi otomatis endpoint webhook `POST /api/webhooks/create-user` (cek HTTP status + field wajib sukses):
+
+```bash
+npm run verify:webhook:create-user
+```
+
+Catatan env:
+- `WEBHOOK_SECRET` wajib tersedia (bisa dari shell env atau `.env.local`)
+- `WEBHOOK_BASE_URL` opsional (default: `NEXT_PUBLIC_SITE_URL`, fallback `http://localhost:3000`)
+
 ### Route-Testing Checklist
 
 - [ ] `/login` loads without auth, redirects to `/products` after login
