@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("[create-user] supabase admin init error:", message);
     return NextResponse.json(
-      { error: "Internal Server Error: webhook service is not configured" },
+      { error: "Internal Server Error: missing Supabase admin environment variables" },
       { status: 500 }
     );
   }

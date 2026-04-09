@@ -5,26 +5,31 @@ import { createClient } from "@supabase/supabase-js";
  * NEVER expose this on the client side.
  * Only use in server-side API routes / Server Actions.
  */
-let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+let cachedSupabaseAdmin: ReturnType<typeof createClient> | null = null;
 
 export function getSupabaseAdmin() {
-  if (supabaseAdmin) return supabaseAdmin;
+  if (cachedSupabaseAdmin) return cachedSupabaseAdmin;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
+    const missingVars = [
+      !supabaseUrl ? "NEXT_PUBLIC_SUPABASE_URL" : null,
+      !serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : null,
+    ].filter(Boolean);
+
     throw new Error(
-      "Missing Supabase admin environment variables: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY."
+      `Missing Supabase admin environment variables: ${missingVars.join(", ")}.`
     );
   }
 
-  supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+  cachedSupabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   });
 
-  return supabaseAdmin;
+  return cachedSupabaseAdmin;
 }
