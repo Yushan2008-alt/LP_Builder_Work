@@ -143,7 +143,6 @@ export async function POST(request: NextRequest) {
     email: trimmedEmail,
     options: {
       emailRedirectTo: callbackUrl,
-      shouldCreateUser: false,
     },
   });
 
@@ -173,7 +172,7 @@ export async function POST(request: NextRequest) {
       },
       user_limits_created: !limitsError,
       profile_created: !profileError,
-      magic_link_email_sent: true,
+      magic_link_email_sent: !magicLinkError,
       redirect_to: callbackUrl,
     },
     { status: 201 }
