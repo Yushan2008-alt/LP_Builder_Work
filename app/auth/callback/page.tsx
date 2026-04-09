@@ -14,11 +14,22 @@
  *   2. Token-hash flow  → ?token_hash=x&type= (webhook-generated / email template)
  */
 
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function AuthCallbackPage() {
+const LoadingScreen = () => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+    <div className="text-center">
+      <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-4 shadow-lg animate-pulse">
+        <span className="text-2xl font-bold text-white">LP</span>
+      </div>
+      <p className="text-gray-600 text-sm">Memverifikasi akun kamu...</p>
+    </div>
+  </div>
+);
+
+function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const handled = useRef(false); // prevent double-run in React strict-mode
@@ -108,5 +119,13 @@ export default function AuthCallbackPage() {
         <p className="text-gray-600 text-sm">Memverifikasi akun kamu...</p>
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <CallbackHandler />
+    </Suspense>
   );
 }
