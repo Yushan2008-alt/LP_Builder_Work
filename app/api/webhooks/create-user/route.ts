@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
   const userId = data.user.id;
 
-  // 6. Upsert user_limits (fallback jika trigger tidak aktif)
+  // 6. Upsert user_limits (fallback if trigger is inactive)
   const { error: limitsError } = await supabaseAdmin
     .from("user_limits")
     .upsert(
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     console.warn("[create-user] user_limits upsert warning:", limitsError.message);
   }
 
-  // 6b. Upsert profiles baseline tier and password flag
+  // 6b. Upsert baseline profiles row
   const { error: profileError } = await supabaseAdmin
     .from("profiles")
     .upsert(
