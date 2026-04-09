@@ -137,7 +137,11 @@ export async function POST(request: NextRequest) {
   }
 
   // 7. Send magic link automatically for newly registered user
-  const callbackUrl = new URL("/auth/callback", request.url).toString();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const callbackBaseUrl = siteUrl
+    ? siteUrl.replace(/\/+$/, "")
+    : new URL(request.url).origin;
+  const callbackUrl = new URL("/auth/callback", callbackBaseUrl).toString();
   const { error: magicLinkError } = await supabaseAdmin.auth.signInWithOtp({
     email: trimmedEmail,
     options: {
