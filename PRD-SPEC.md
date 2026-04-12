@@ -47,8 +47,11 @@ npm install --save-dev \
 Create `.env.local`:
 
 ```
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+WEBHOOK_SECRET=your_webhook_secret
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### Initial Tailwind Setup

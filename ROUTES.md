@@ -606,9 +606,11 @@ Catatan env:
 ### Pre-Deployment Checklist
 
 1. **Environment Variables** (.env.local):
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_API_URL` (if backend queries needed)
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `WEBHOOK_SECRET`
+   - `NEXT_PUBLIC_SITE_URL`
 
 2. **Supabase Setup**:
    - Auth enabled (email/password)
