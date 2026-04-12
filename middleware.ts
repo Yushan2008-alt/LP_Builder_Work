@@ -72,6 +72,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Keep this list in sync with protected/login routes.
+    // Add new app routes here if they should run auth middleware.
     "/",
     "/login",
     "/dashboard/:path*",
