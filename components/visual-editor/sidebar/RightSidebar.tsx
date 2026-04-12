@@ -27,17 +27,9 @@ export default function RightSidebar() {
 
   useRenderTrace("RightSidebar", { hasSelection: !!selectedPath, selectedTag });
 
-  if (!selectedPath) {
-    return (
-      <div className="w-64 bg-white border-l border-gray-200 flex items-center justify-center text-gray-400 text-xs text-center p-4">
-        Click an element in the preview to select and edit it.
-      </div>
-    );
-  }
-
   // Check move capability
   const el = useMemo(() => {
-    if (!html) return null;
+    if (!html || !selectedPath) return null;
     const doc = parseHtml(html);
     const parts = selectedPath.split(">");
     let cur: Element = doc.documentElement;
@@ -51,6 +43,14 @@ export default function RightSidebar() {
 
   const canMoveUp = !!(el?.previousElementSibling);
   const canMoveDown = !!(el?.nextElementSibling);
+
+  if (!selectedPath) {
+    return (
+      <div className="w-64 bg-white border-l border-gray-200 flex items-center justify-center text-gray-400 text-xs text-center p-4">
+        Click an element in the preview to select and edit it.
+      </div>
+    );
+  }
 
   return (
     <div className="w-64 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
