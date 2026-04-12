@@ -48,7 +48,7 @@ export function Sidebar() {
 
       const { count, error } = await supabase
         .from("projects")
-        .select("id", { count: "exact", head: true })
+        .select("*", { count: "exact", head: true })
         .eq("user_id", userId);
 
       if (cancelled) return;

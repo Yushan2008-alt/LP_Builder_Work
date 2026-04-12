@@ -51,7 +51,8 @@ export function useProjects() {
         try {
           const data = await inFlightRequest;
           setProjects(data);
-        } catch {
+        } catch (error) {
+          console.error("Failed to load projects from shared request:", error);
           setProjects([]);
         } finally {
           setIsLoading(false);
@@ -76,7 +77,8 @@ export function useProjects() {
       const nextProjects = await request;
       setProjectsCache(user.id, nextProjects);
       setProjects(nextProjects);
-    } catch {
+    } catch (error) {
+      console.error("Failed to load projects:", error);
       setProjects([]);
       clearProjectsCache(user.id);
     } finally {
