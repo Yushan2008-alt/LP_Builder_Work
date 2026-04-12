@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useEditorStore } from "@/store/editor-store";
 import { buildInjectedHtml } from "@/lib/editor/html-utils";
 import { IFRAME_BRIDGE_SCRIPT } from "@/lib/editor/iframe-bridge";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 
 const DEVICE_WIDTHS = {
   mobile: "375px",
@@ -13,7 +14,12 @@ const DEVICE_WIDTHS = {
 
 export default function PreviewPane() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { html, device, selectedPath, selectElement } = useEditorStore();
+  const html = useEditorStore((state) => state.html);
+  const device = useEditorStore((state) => state.device);
+  const selectedPath = useEditorStore((state) => state.selectedPath);
+  const selectElement = useEditorStore((state) => state.selectElement);
+
+  useRenderTrace("PreviewPane", { device, hasHtml: !!html, hasSelection: !!selectedPath });
 
   // Inject selected path to iframe after render
   const sendSelectionToIframe = useCallback((path: string | null) => {
@@ -52,7 +58,10 @@ export default function PreviewPane() {
     }
   }, [selectedPath, sendSelectionToIframe]);
 
-  const injectedHtml = html ? buildInjectedHtml(html, IFRAME_BRIDGE_SCRIPT) : "";
+  const injectedHtml = useMemo(
+    () => (html ? buildInjectedHtml(html, IFRAME_BRIDGE_SCRIPT) : ""),
+    [html]
+  );
 
   const wrapperWidth = DEVICE_WIDTHS[device];
 

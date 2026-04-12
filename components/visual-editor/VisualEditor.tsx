@@ -1,28 +1,35 @@
 "use client";
 
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Toaster } from "react-hot-toast";
 import toast from "react-hot-toast";
 import { useEditorStore } from "@/store/editor-store";
-import Toolbar from "./Toolbar";
-import PreviewPane from "./PreviewPane";
-import CodePane from "./CodePane";
-import RightSidebar from "./sidebar/RightSidebar";
-import ElementTree from "./tree/ElementTree";
-import AddElementPanel from "./add/AddElementPanel";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 import PasteHtmlModal from "./modals/PasteHtmlModal";
 import ConfirmModal from "./modals/ConfirmModal";
 
+const Toolbar = dynamic(() => import("./Toolbar"));
+const PreviewPane = dynamic(() => import("./PreviewPane"));
+const CodePane = dynamic(() => import("./CodePane"));
+const RightSidebar = dynamic(() => import("./sidebar/RightSidebar"));
+const ElementTree = dynamic(() => import("./tree/ElementTree"));
+const AddElementPanel = dynamic(() => import("./add/AddElementPanel"));
+
 export default function VisualEditor() {
-  const {
-    view, setView, setDevice, leftPanel,
-    undo, redo,
-    duplicateElement,
-    selectElement,
-    setShowConfirmDelete,
-    selectedPath,
-    copyCleanHtml,
-  } = useEditorStore();
+  const view = useEditorStore((state) => state.view);
+  const setView = useEditorStore((state) => state.setView);
+  const setDevice = useEditorStore((state) => state.setDevice);
+  const leftPanel = useEditorStore((state) => state.leftPanel);
+  const undo = useEditorStore((state) => state.undo);
+  const redo = useEditorStore((state) => state.redo);
+  const duplicateElement = useEditorStore((state) => state.duplicateElement);
+  const selectElement = useEditorStore((state) => state.selectElement);
+  const setShowConfirmDelete = useEditorStore((state) => state.setShowConfirmDelete);
+  const selectedPath = useEditorStore((state) => state.selectedPath);
+  const copyCleanHtml = useEditorStore((state) => state.copyCleanHtml);
+
+  useRenderTrace("VisualEditor", { view, leftPanel, hasSelection: !!selectedPath });
 
   // Global keyboard shortcuts
   useEffect(() => {

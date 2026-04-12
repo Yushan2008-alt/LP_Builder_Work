@@ -3,11 +3,13 @@
 import { useEffect, useRef } from "react";
 import { useEditorStore } from "@/store/editor-store";
 import { parseHtml, serializeHtml } from "@/lib/editor/html-utils";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 
 const CODE_EDITOR_DEBOUNCE_MS = 200;
 
 export default function CodePane() {
-  const { html, setHtml } = useEditorStore();
+  const html = useEditorStore((state) => state.html);
+  const setHtml = useEditorStore((state) => state.setHtml);
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewRef = useRef<any>(null);
@@ -16,6 +18,8 @@ export default function CodePane() {
   const draftRef = useRef(html);
   const debouncedDraftRef = useRef(html);
   const dirtyRef = useRef(false);
+
+  useRenderTrace("CodePane", { htmlLength: html.length });
 
   // Keep refs in sync for closure use
   htmlRef.current = html;

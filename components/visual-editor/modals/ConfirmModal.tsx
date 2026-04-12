@@ -1,9 +1,15 @@
 "use client";
 
 import { useEditorStore } from "@/store/editor-store";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 
 export default function ConfirmModal() {
-  const { showConfirmDelete, setShowConfirmDelete, deleteElement, selectedTag } = useEditorStore();
+  const showConfirmDelete = useEditorStore((state) => state.showConfirmDelete);
+  const setShowConfirmDelete = useEditorStore((state) => state.setShowConfirmDelete);
+  const deleteElement = useEditorStore((state) => state.deleteElement);
+  const selectedTag = useEditorStore((state) => state.selectedTag);
+
+  useRenderTrace("ConfirmModal", { showConfirmDelete, selectedTag });
 
   if (!showConfirmDelete) return null;
 

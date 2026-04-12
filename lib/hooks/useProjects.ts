@@ -5,30 +5,84 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getFormulaById } from "@/lib/config/formulas";
 import { getFriendlyDatabaseError } from "@/lib/utils";
 
+const PROJECTS_CACHE_TTL_MS = 15_000;
+let projectsCache: { userId: string; projects: Project[]; updatedAt: number } | null = null;
+const inFlightProjectFetches = new Map<string, Promise<Project[]>>();
+
+function getCachedProjects(userId: string): Project[] | null {
+  if (!projectsCache || projectsCache.userId !== userId) return null;
+  if (Date.now() - projectsCache.updatedAt > PROJECTS_CACHE_TTL_MS) return null;
+  return projectsCache.projects;
+}
+
+function setProjectsCache(userId: string, projects: Project[]) {
+  projectsCache = { userId, projects, updatedAt: Date.now() };
+}
+
+function clearProjectsCache(userId?: string) {
+  if (!userId || projectsCache?.userId === userId) {
+    projectsCache = null;
+  }
+}
+
 export function useProjects() {
   const { user } = useAuth();
   const supabase = useMemo(() => createClient(), []);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchProjects = useCallback(async () => {
+  const fetchProjects = useCallback(async (options?: { force?: boolean }) => {
     if (!user) {
       setProjects([]);
+      clearProjectsCache();
       return;
     }
+
+    const force = options?.force ?? false;
+    if (!force) {
+      const cachedProjects = getCachedProjects(user.id);
+      if (cachedProjects) {
+        setProjects(cachedProjects);
+        return;
+      }
+      const inFlightRequest = inFlightProjectFetches.get(user.id);
+      if (inFlightRequest) {
+        setIsLoading(true);
+        try {
+          const data = await inFlightRequest;
+          setProjects(data);
+        } catch (error) {
+          console.error("Failed to load projects from shared request:", error);
+          setProjects([]);
+        } finally {
+          setIsLoading(false);
+        }
+        return;
+      }
+    }
+
     setIsLoading(true);
-    try {
+    const request = (async () => {
       const { data, error } = await supabase
         .from("projects")
         .select("*")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false });
-      if (error) {
-        setProjects([]);
-        return;
-      }
-      setProjects((data as Project[]) ?? []);
+      if (error) throw error;
+      return (data as Project[]) ?? [];
+    })();
+    inFlightProjectFetches.set(user.id, request);
+
+    try {
+      const nextProjects = await request;
+      setProjectsCache(user.id, nextProjects);
+      setProjects(nextProjects);
+    } catch (error) {
+      console.error("Failed to load projects:", error);
+      setProjects([]);
+      clearProjectsCache(user.id);
     } finally {
+      inFlightProjectFetches.delete(user.id);
       setIsLoading(false);
     }
   }, [user, supabase]);
@@ -43,6 +97,7 @@ export function useProjects() {
     if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const project = data as Project;
     setProjects((prev) => [project, ...prev]);
+    clearProjectsCache(user.id);
     return project;
   }, [user, supabase]);
 
@@ -60,6 +115,7 @@ export function useProjects() {
     if (error) throw new Error(getFriendlyDatabaseError(error.message));
     const project = data as Project;
     setProjects((prev) => prev.map((p) => (p.id === id ? project : p)));
+    clearProjectsCache(user.id);
     return project;
   }, [supabase, user]);
 
@@ -70,6 +126,7 @@ export function useProjects() {
     const { error } = await supabase.from("projects").delete().eq("id", id).eq("user_id", user.id);
     if (error) throw new Error(getFriendlyDatabaseError(error.message));
     setProjects((prev) => prev.filter((p) => p.id !== id));
+    clearProjectsCache(user.id);
     return true;
   }, [supabase, user]);
 
@@ -109,6 +166,7 @@ export function useProjects() {
 
     const duplicatedProject = createdData as Project;
     setProjects((prev) => [duplicatedProject, ...prev]);
+    clearProjectsCache(user.id);
 
     const { data: sourceSectionsData, error: sourceSectionsError } = await supabase
       .from("sections")
@@ -124,6 +182,7 @@ export function useProjects() {
         );
       }
       setProjects((prev) => prev.filter((project) => project.id !== duplicatedProject.id));
+      clearProjectsCache(user.id);
       throw new Error(getFriendlyDatabaseError(sourceSectionsError.message));
     }
 
@@ -157,6 +216,7 @@ export function useProjects() {
         );
       }
       setProjects((prev) => prev.filter((project) => project.id !== duplicatedProject.id));
+      clearProjectsCache(user.id);
       throw new Error(getFriendlyDatabaseError(duplicateSectionsError.message));
     }
 
@@ -205,6 +265,7 @@ export function useProjects() {
           );
         }
         setProjects((prev) => prev.filter((p) => p.id !== project.id));
+        clearProjectsCache(user.id);
         throw new Error(getFriendlyDatabaseError(error.message));
       }
     }

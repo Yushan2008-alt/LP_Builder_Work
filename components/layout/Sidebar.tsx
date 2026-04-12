@@ -4,8 +4,8 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useProjects } from "@/lib/hooks/useProjects";
-import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useEffect, useMemo, useState } from "react";
 
 const navItems = [
   {
@@ -32,12 +32,39 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { signOut, user } = useAuth();
+  const userId = user?.id;
   const router = useRouter();
-  const { projects, fetchProjects } = useProjects();
+  const supabase = useMemo(() => createClient(), []);
+  const [projectCount, setProjectCount] = useState(0);
 
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    let cancelled = false;
+
+    const fetchProjectCount = async () => {
+      if (!userId) {
+        if (!cancelled) setProjectCount(0);
+        return;
+      }
+
+      const { count, error } = await supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId);
+
+      if (cancelled) return;
+      if (error) {
+        setProjectCount(0);
+        return;
+      }
+      setProjectCount(count ?? 0);
+    };
+
+    fetchProjectCount();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, supabase, userId]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -75,9 +102,9 @@ export function Sidebar() {
                     )}>
                     <span className="text-base">{item.icon}</span>
                     {item.label}
-                    {item.href === "/saved" && projects.length > 0 && (
+                    {item.href === "/saved" && projectCount > 0 && (
                       <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">
-                        {projects.length}
+                        {projectCount}
                       </span>
                     )}
                   </Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
@@ -21,8 +22,13 @@ import { useBrandContext } from "@/contexts/BrandContext";
 import { assemblePrompt, canGenerate } from "@/lib/prompts/engine";
 import { TONES, PLATFORMS } from "@/lib/config/platforms";
 import SectionCard from "./SectionCard";
-import OutputPanel from "./OutputPanel";
 import { useToast } from "@/components/ui/Toast";
+
+const OutputPanel = dynamic(() => import("./OutputPanel"), {
+  loading: () => (
+    <div className="h-full w-full rounded-xl border border-gray-200 bg-white animate-pulse" />
+  ),
+});
 
 type SectionValidation = {
   section_title?: string;

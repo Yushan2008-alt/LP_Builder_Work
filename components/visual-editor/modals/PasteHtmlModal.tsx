@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import { useEditorStore } from "@/store/editor-store";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 
 export default function PasteHtmlModal() {
-  const { showPasteModal, setShowPasteModal, loadHtml } = useEditorStore();
+  const showPasteModal = useEditorStore((state) => state.showPasteModal);
+  const setShowPasteModal = useEditorStore((state) => state.setShowPasteModal);
+  const loadHtml = useEditorStore((state) => state.loadHtml);
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
+
+  useRenderTrace("PasteHtmlModal", { showPasteModal, hasValue: !!value });
 
   if (!showPasteModal) return null;
 
@@ -39,7 +44,7 @@ export default function PasteHtmlModal() {
           </div>
           <button
             onClick={handleCancel}
-            aria-label="Close modal"
+            aria-label="Close paste HTML modal"
             className="text-gray-400 hover:text-gray-600"
           >
             ✕
