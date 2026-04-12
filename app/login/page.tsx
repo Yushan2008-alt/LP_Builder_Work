@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -38,8 +37,6 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSendingMagicLink, setIsSendingMagicLink] = useState(false);
-  const [magicLinkMessage, setMagicLinkMessage] = useState("");
   const [redirectAfterAuth, setRedirectAfterAuth] = useState("/products");
 
   useEffect(() => {
@@ -77,43 +74,6 @@ function LoginForm() {
       router.replace(redirectAfterAuth);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleSendMagicLink = async () => {
-    setError("");
-    setMagicLinkMessage("");
-
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail) {
-      setError("Email wajib diisi untuk kirim magic link.");
-      return;
-    }
-
-    setIsSendingMagicLink(true);
-    try {
-      // Must call from CLIENT-SIDE so Supabase can store the
-      // PKCE code verifier in browser cookies (not server-side).
-      const supabase = createClient();
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: normalizedEmail,
-        options: {
-          // Redirect to /auth/callback after clicking the link in email
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          shouldCreateUser: false, // only for existing users
-        },
-      });
-
-      if (otpError) {
-        setError(mapAuthError(otpError.message));
-        return;
-      }
-
-      setMagicLinkMessage("✅ Magic link berhasil dikirim! Cek inbox email kamu.");
-    } catch {
-      setError("Tidak bisa mengirim magic link saat ini.");
-    } finally {
-      setIsSendingMagicLink(false);
     }
   };
 
@@ -160,21 +120,6 @@ function LoginForm() {
             <Button type="submit" isLoading={isSubmitting} className="w-full" size="lg">
               Masuk
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              size="lg"
-              isLoading={isSendingMagicLink}
-              onClick={handleSendMagicLink}
-            >
-              Kirim Magic Link
-            </Button>
-            {magicLinkMessage && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
-                {magicLinkMessage}
-              </div>
-            )}
           </form>
         </div>
 
