@@ -3,10 +3,15 @@
 import { useMemo, useCallback } from "react";
 import { useEditorStore } from "@/store/editor-store";
 import { parseHtmlToTree, parseHtml, resolvePathToElement, getDirectText } from "@/lib/editor/html-utils";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 import TreeNode from "./TreeNode";
 
 export default function ElementTree() {
-  const { html, selectedPath, selectElement } = useEditorStore();
+  const html = useEditorStore((state) => state.html);
+  const selectedPath = useEditorStore((state) => state.selectedPath);
+  const selectElement = useEditorStore((state) => state.selectElement);
+
+  useRenderTrace("ElementTree", { hasHtml: !!html, selectedPath });
 
   const tree = useMemo(() => {
     if (!html) return null;

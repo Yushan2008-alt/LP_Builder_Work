@@ -3,12 +3,16 @@
 import { useState } from "react";
 import { useEditorStore } from "@/store/editor-store";
 import { ELEMENT_TEMPLATES, ElementTemplate } from "@/lib/editor/element-templates";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 
 type InsertPosition = "inside" | "before" | "after";
 
 export default function AddElementPanel() {
-  const { addElement, selectedPath } = useEditorStore();
+  const addElement = useEditorStore((state) => state.addElement);
+  const selectedPath = useEditorStore((state) => state.selectedPath);
   const [insertPosition, setInsertPosition] = useState<InsertPosition>("inside");
+
+  useRenderTrace("AddElementPanel", { hasSelection: !!selectedPath, insertPosition });
 
   function handleAdd(template: ElementTemplate) {
     addElement(template.html, insertPosition);

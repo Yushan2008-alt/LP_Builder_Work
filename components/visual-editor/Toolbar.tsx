@@ -4,22 +4,28 @@ import { useEditorStore } from "@/store/editor-store";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { cleanHtmlForExport } from "@/lib/editor/html-utils";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 
 export default function Toolbar() {
-  const {
-    view, setView,
-    device, setDevice,
-    leftPanel, setLeftPanel,
-    historyIndex, history,
-    undo, redo,
-    setShowPasteModal,
-    copyCleanHtml,
-    html,
-    tailwindAutoInjected,
-  } = useEditorStore();
+  const view = useEditorStore((state) => state.view);
+  const setView = useEditorStore((state) => state.setView);
+  const device = useEditorStore((state) => state.device);
+  const setDevice = useEditorStore((state) => state.setDevice);
+  const leftPanel = useEditorStore((state) => state.leftPanel);
+  const setLeftPanel = useEditorStore((state) => state.setLeftPanel);
+  const historyIndex = useEditorStore((state) => state.historyIndex);
+  const historyLength = useEditorStore((state) => state.history.length);
+  const undo = useEditorStore((state) => state.undo);
+  const redo = useEditorStore((state) => state.redo);
+  const setShowPasteModal = useEditorStore((state) => state.setShowPasteModal);
+  const copyCleanHtml = useEditorStore((state) => state.copyCleanHtml);
+  const html = useEditorStore((state) => state.html);
+  const tailwindAutoInjected = useEditorStore((state) => state.tailwindAutoInjected);
 
   const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < history.length - 1;
+  const canRedo = historyIndex < historyLength - 1;
+
+  useRenderTrace("Toolbar", { view, device, leftPanel, historyIndex, historyLength });
 
   async function handleCopy() {
     try {

@@ -1,21 +1,31 @@
 "use client";
 
+import { useMemo } from "react";
 import { useEditorStore } from "@/store/editor-store";
 import { parseHtml } from "@/lib/editor/html-utils";
 import ClassEditor from "./ClassEditor";
 import TextEditor from "./TextEditor";
 import AttributeEditor from "./AttributeEditor";
 import { cn } from "@/lib/utils";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 
 export default function RightSidebar() {
-  const {
-    selectedPath, selectedTag, selectedClasses, selectedText, selectedAttrs,
-    html,
-    selectElement,
-    applyClassChange, applyTextChange, applyAttrChange, removeAttr,
-    duplicateElement, moveElement,
-    setShowConfirmDelete,
-  } = useEditorStore();
+  const selectedPath = useEditorStore((state) => state.selectedPath);
+  const selectedTag = useEditorStore((state) => state.selectedTag);
+  const selectedClasses = useEditorStore((state) => state.selectedClasses);
+  const selectedText = useEditorStore((state) => state.selectedText);
+  const selectedAttrs = useEditorStore((state) => state.selectedAttrs);
+  const html = useEditorStore((state) => state.html);
+  const selectElement = useEditorStore((state) => state.selectElement);
+  const applyClassChange = useEditorStore((state) => state.applyClassChange);
+  const applyTextChange = useEditorStore((state) => state.applyTextChange);
+  const applyAttrChange = useEditorStore((state) => state.applyAttrChange);
+  const removeAttr = useEditorStore((state) => state.removeAttr);
+  const duplicateElement = useEditorStore((state) => state.duplicateElement);
+  const moveElement = useEditorStore((state) => state.moveElement);
+  const setShowConfirmDelete = useEditorStore((state) => state.setShowConfirmDelete);
+
+  useRenderTrace("RightSidebar", { hasSelection: !!selectedPath, selectedTag });
 
   if (!selectedPath) {
     return (
@@ -26,8 +36,9 @@ export default function RightSidebar() {
   }
 
   // Check move capability
-  const doc = html ? parseHtml(html) : null;
-  const el = doc ? (() => {
+  const el = useMemo(() => {
+    if (!html) return null;
+    const doc = parseHtml(html);
     const parts = selectedPath.split(">");
     let cur: Element = doc.documentElement;
     for (const part of parts) {
@@ -36,7 +47,7 @@ export default function RightSidebar() {
       cur = child;
     }
     return cur;
-  })() : null;
+  }, [html, selectedPath]);
 
   const canMoveUp = !!(el?.previousElementSibling);
   const canMoveDown = !!(el?.nextElementSibling);

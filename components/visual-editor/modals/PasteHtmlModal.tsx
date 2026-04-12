@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import { useEditorStore } from "@/store/editor-store";
+import { useRenderTrace } from "@/lib/hooks/useRenderTrace";
 
 export default function PasteHtmlModal() {
-  const { showPasteModal, setShowPasteModal, loadHtml } = useEditorStore();
+  const showPasteModal = useEditorStore((state) => state.showPasteModal);
+  const setShowPasteModal = useEditorStore((state) => state.setShowPasteModal);
+  const loadHtml = useEditorStore((state) => state.loadHtml);
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
+
+  useRenderTrace("PasteHtmlModal", { showPasteModal, hasValue: !!value });
 
   if (!showPasteModal) return null;
 
