@@ -51,6 +51,8 @@ export function useProjects() {
         try {
           const data = await inFlightRequest;
           setProjects(data);
+        } catch {
+          setProjects([]);
         } finally {
           setIsLoading(false);
         }
@@ -65,7 +67,7 @@ export function useProjects() {
         .select("*")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false });
-      if (error) return [];
+      if (error) throw error;
       return (data as Project[]) ?? [];
     })();
     inFlightProjectFetches.set(user.id, request);
@@ -74,6 +76,9 @@ export function useProjects() {
       const nextProjects = await request;
       setProjectsCache(user.id, nextProjects);
       setProjects(nextProjects);
+    } catch {
+      setProjects([]);
+      clearProjectsCache(user.id);
     } finally {
       inFlightProjectFetches.delete(user.id);
       setIsLoading(false);
