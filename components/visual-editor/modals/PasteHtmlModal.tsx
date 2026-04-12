@@ -37,7 +37,13 @@ export default function PasteHtmlModal() {
               Paste your Tailwind HTML below. Tailwind CDN will be auto-injected if missing.
             </p>
           </div>
-          <button onClick={handleCancel} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button
+            onClick={handleCancel}
+            aria-label="Close paste HTML modal"
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Textarea */}
