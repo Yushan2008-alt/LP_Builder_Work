@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useEditorStore } from "@/store/editor-store";
 
 export default function PasteHtmlModal() {
-  const { showPasteModal, setShowPasteModal, loadHtml, html } = useEditorStore();
+  const { showPasteModal, setShowPasteModal, loadHtml } = useEditorStore();
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
 
@@ -21,7 +21,6 @@ export default function PasteHtmlModal() {
   }
 
   function handleCancel() {
-    if (!html) return; // Cannot cancel if no HTML loaded
     setShowPasteModal(false);
     setValue("");
     setError("");
@@ -29,7 +28,7 @@ export default function PasteHtmlModal() {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{ maxHeight: "80vh" }}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{ maxHeight: "90vh" }}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div>
@@ -38,9 +37,13 @@ export default function PasteHtmlModal() {
               Paste your Tailwind HTML below. Tailwind CDN will be auto-injected if missing.
             </p>
           </div>
-          {html && (
-            <button onClick={handleCancel} className="text-gray-400 hover:text-gray-600">✕</button>
-          )}
+          <button
+            onClick={handleCancel}
+            aria-label="Close modal"
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Textarea */}
@@ -49,7 +52,7 @@ export default function PasteHtmlModal() {
             value={value}
             onChange={(e) => { setValue(e.target.value); setError(""); }}
             placeholder={`Paste your HTML here...\n\n<!DOCTYPE html>\n<html>\n  <head>...</head>\n  <body>...</body>\n</html>`}
-            className="w-full h-full min-h-[280px] font-mono text-xs border border-gray-300 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-full min-h-[280px] font-mono text-xs border border-gray-300 rounded-lg px-3 py-2 resize-y overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
             spellCheck={false}
           />
           {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
@@ -61,14 +64,12 @@ export default function PasteHtmlModal() {
             Supports single-file Tailwind HTML. No upload — paste only.
           </p>
           <div className="flex gap-2">
-            {html && (
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                Cancel
-              </button>
-            )}
+            <button
+              onClick={handleCancel}
+              className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              Cancel
+            </button>
             <button
               onClick={handleLoad}
               disabled={!value.trim()}
