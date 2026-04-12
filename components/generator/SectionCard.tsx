@@ -175,7 +175,7 @@ export default function SectionCard({
 
       {/* Goals preview (collapsed state) */}
       {!isExpanded && section.section_goals && (
-        <div className="px-3 py-2 text-xs leading-relaxed text-gray-500 line-clamp-2 border-b border-gray-100">
+        <div className="px-3 py-2 text-xs leading-relaxed text-gray-500 whitespace-pre-wrap break-words border-b border-gray-100">
           {section.section_goals}
         </div>
       )}
