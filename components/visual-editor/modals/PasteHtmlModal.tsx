@@ -47,12 +47,12 @@ export default function PasteHtmlModal() {
         </div>
 
         {/* Textarea */}
-        <div className="p-4">
+        <div className="flex-1 overflow-hidden p-4">
           <textarea
             value={value}
             onChange={(e) => { setValue(e.target.value); setError(""); }}
             placeholder={`Paste your HTML here...\n\n<!DOCTYPE html>\n<html>\n  <head>...</head>\n  <body>...</body>\n</html>`}
-            className="w-full min-h-[280px] max-h-[55vh] font-mono text-xs border border-gray-300 rounded-lg px-3 py-2 resize-y overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-full min-h-[280px] font-mono text-xs border border-gray-300 rounded-lg px-3 py-2 resize-y overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
             spellCheck={false}
           />
           {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
