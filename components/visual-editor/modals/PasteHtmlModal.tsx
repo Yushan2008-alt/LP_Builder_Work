@@ -28,7 +28,7 @@ export default function PasteHtmlModal() {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{ maxHeight: "80vh" }}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{ maxHeight: "90vh" }}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div>
@@ -47,12 +47,12 @@ export default function PasteHtmlModal() {
         </div>
 
         {/* Textarea */}
-        <div className="flex-1 overflow-hidden p-4">
+        <div className="p-4">
           <textarea
             value={value}
             onChange={(e) => { setValue(e.target.value); setError(""); }}
             placeholder={`Paste your HTML here...\n\n<!DOCTYPE html>\n<html>\n  <head>...</head>\n  <body>...</body>\n</html>`}
-            className="w-full h-full min-h-[280px] font-mono text-xs border border-gray-300 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full min-h-[280px] max-h-[55vh] font-mono text-xs border border-gray-300 rounded-lg px-3 py-2 resize-y overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
             spellCheck={false}
           />
           {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
